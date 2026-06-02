@@ -1,0 +1,35 @@
+# Local secrets and generated credentials
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*secret*
+*secrets*
+
+# Python/runtime artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Generated pipeline outputs
+data/processed/
+data/intermediate/
+data/exports/
+outputs/
+logs/
+
+# Power BI local/cache artifacts
+*.pbitmp
+*.pbix.tmp
+
+# Raw documents
+docs/*.docx
+docs/*.pdf
+
+# Keep raw datasets only when licensing and size policy allow it.
+# Use Git LFS for large images and PBIX files.
