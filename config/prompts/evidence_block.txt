@@ -1,0 +1,2 @@
+[{index}] document_id={document_id}; source_type={source_type}; source_id={source_id}; score={score}; warning_light_id={warning_light_id}; warning_light={warning_light_name}; vehicle={make} {model} {model_year}; component_category={component_category}; severity={severity}; service={recommended_service_type}; source_url={source_url}; image_path={image_path}; review_status={review_status}
+{content}

@@ -60,6 +60,52 @@ Raw CSV/images
 -> Power BI dashboard
 ```
 
+## Local FOSS API
+
+The local RAG API uses SQL Server, Qdrant, Ollama, and FastAPI. It reads runtime
+settings from `config/.env`.
+
+Start the API for Power BI:
+
+```bash
+scripts/bash/run_local_foss_api.sh
+```
+
+Refresh the Qdrant collection before starting the API:
+
+```bash
+scripts/bash/run_local_foss_api.sh --ingest
+```
+
+Recreate the Qdrant collection from `dbo.vw_rag_documents`:
+
+```bash
+scripts/bash/run_local_foss_api.sh --recreate
+```
+
+Test the API directly:
+
+```bash
+curl -X POST http://127.0.0.1:18080/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query":"yellow engine light recall",
+    "make":"Hyundai",
+    "model":"Elantra",
+    "model_year":2020,
+    "warning_light":"engine light",
+    "top_k":5
+  }'
+```
+
+For ordinary text questions, image evidence is excluded by default so icon
+metadata does not override recall or warning-guide severity. Set
+`include_image_evidence` to `true` only for icon/image-oriented questions.
+
+Power BI Desktop can call the local API with `src/powerbi/rag_query.m`. The
+local URL works on the machine running Power BI; external users need SSH/VPN
+forwarding or a gateway/reverse-proxy path to reach the FastAPI service.
+
 ## Preprocessing
 
 Raw CSV files are the local source of truth. The Python preprocessing script

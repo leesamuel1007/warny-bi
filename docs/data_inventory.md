@@ -1,14 +1,14 @@
 # WARNY-BI Data Inventory
 
-This document is the durable, provider-neutral inventory for raw WARNY-BI data.
+WARNY-BI uses two kinds of data: CSV files with warning-light, recall, and
+service information, and image files for dashboard warning-light symbols.
 
-Raw CSV datasets live under `term_project/data/raw/`. Warning-light image files
-live under `term_project/data/images/`. These source assets are shared by both
-the Azure and FOSS paths.
+Raw CSV datasets live under `data/raw/`.
+Warning-light image files live under `data/images/`.
+These source assets are shared by both the Azure and FOSS paths.
 
-Generated processed CSV files live under `term_project/data/processed/`. They
-are SQL-ready outputs created by `scripts/python/preprocess_dataset.py`, not
-raw source data.
+Generated processed CSV files live under `data/processed/`. They are SQL-ready
+outputs created by `scripts/python/preprocess_dataset.py`, not raw source data.
 
 ## CSV Sources
 
@@ -31,16 +31,15 @@ raw source data.
 
 Images are shared source assets. Azure should normally store them in Blob
 Storage, while FOSS may read them from the local filesystem or object storage.
-Relational/vector records should store image metadata and paths, not image
-binary content.
+
+For data efficiency, SQL tables and vector records store image metadata and
+paths. They do not store image binary content.
 
 ## How The Data Is Used
 
 Python reads the raw CSV files, performs lightweight validation and EDA,
-generates `schema.json` for operator review, and writes processed CSV files.
-Azure and FOSS SQL scripts should build relational database tables from the
-processed CSV files. The RAG-readable retrieval surface should be a SQL view,
-not a Python-generated document file.
+generates `schema.json` for review, and writes processed CSV files.
 
-Image binary content is treated as a source asset. SQL/vector records should
-store image metadata and image paths or blob paths, not image binary content.
+Both Azure and FOSS pipelines use SQL scripts to build relational database
+tables from the processed CSV files. Those tables produce a single SQL view for
+RAG retrieval.

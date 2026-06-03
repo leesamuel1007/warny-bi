@@ -1,41 +1,100 @@
-# DS545 Warny-BI Project
+# WARNY-BI Project Scope
 
-## Project Procedure
+WARNY-BI is a DS545 term project for warning-light triage and business
+intelligence. The system should help a user describe a dashboard warning-light
+case, retrieve relevant warning-light, recall, and service-routing evidence,
+and return structured rows that can be shown in Power BI.
 
-### Data Loading and Preprocessing
-1. Read multiple raw .csv files and multiple image data as the input dataset.
-2. Verify that the image paths in the .csv files are valid.
-3. Perform lightweight EDA on the raw .csv files - check for column names, inferred data types, null-like values, data distribution, skewedness, data categories, etc.
-4. Generate a reviewable `schema.json` from actual CSV files. Raw CSV files are the ground truth; `schema.json` is generated for operator review and can be edited to set preferred column types, SQL types, primary keys, foreign keys, and normalization rules.
-5. Perform lightweight cleaning on the raw .csv files to make them palatable for SQL parsing, database key separation, RAG, etc.
-6. Save the cleaned .csv files to data/processed/**.csv.
-7. Regenerate `data/processed/schema.json` from the processed CSV files for SQL table construction.
+The system is not a certified diagnosis tool. Its job is to provide
+evidence-grounded triage: what the warning light usually means, how urgent it
+is, whether recall evidence may be relevant, and what service route should be
+prioritized.
 
-The runnable Python entrypoint is `term_project/scripts/python/preprocess_dataset.py`.
-The supported preprocessing commands are:
+## Data Preparation
 
-- `validate`: verify raw CSV presence and image path references.
-- `eda`: inspect raw CSV columns, inferred data types, null-like values, and distributions.
-- `schema`: generate `schema.json` from a selected CSV directory.
-- `clean`: apply schema-driven normalization rules and write SQL-ready processed CSV files.
+The source data consists of CSV files and warning-light images:
 
-### SQL Database Construction
-#### Azure
-1. Write SQL queries and files that will run in Azure pipeline, that read the uploaded .csv files and image files in Azure Blob Storage.
-2. Then write SQL queries and files that will construct SQL Tables from the .csv files.
-3. Then write SQL query that creates a single view for RAG retrieval and Azure AI Search.
+- warning-light catalog
+- warning-light image catalog
+- recall records
+- maintenance and service routing map
+- validation scenarios
+- source/license metadata
 
+The preprocessing script validates these files, profiles the CSVs, generates a
+reviewable `schema.json`, and writes SQL-ready CSV files under
+`data/processed/`.
 
-#### FOSS
-1. Lay out the required FOSS programs and packages required for setting up an alternative pipeline.
-2. Write python class objects and run scripts (either .py or .sh) that run the programs for SQL setup.
-3. Write the SQL queries and files that load the .csv files and images to SQL tables, then constructs the RAG view.
+```bash
+python3 scripts/python/preprocess_dataset.py validate
+python3 scripts/python/preprocess_dataset.py eda
+python3 scripts/python/preprocess_dataset.py schema --csv-dir data/raw --output-file data/processed/schema.json
+python3 scripts/python/preprocess_dataset.py clean --schema-file data/processed/schema.json
+```
 
-### LLM Setup - FOSS
-For FOSS pipeline only, write necessary files and run scripts (either .py or .sh) that run the LLM and perform equivalent operations to text-embeddings-large and gpt-4o for parsing natural language user queries and using RAG search on the vectorized database.
+Raw CSV files remain the authoritative dataset. The generated schema helps with
+SQL table design and preprocessing rules.
 
-### PowerBI Power Query Construction
-For both pipelines, write the Power Query that allows the user to access information and query the database for questions.
+## SQL Database
 
-### PowerBI Dashboard Construction
-Either create a generative script or leave this to be hand-crafted. 
+Both the Azure and FOSS paths use SQL tables built from the processed CSV files.
+The current local setup uses SQL Server in Docker and DBeaver for manual CSV
+import.
+
+Current SQL scripts:
+
+- `scripts/sql/01_create_tables.sql`: creates the six processed-data tables.
+- `scripts/sql/02_load_data.sql`: reserved for scripted loading.
+- `scripts/sql/03_create_rag_view.sql`: creates `dbo.vw_rag_documents`.
+- `scripts/sql/04_verify.sql`: checks row counts, joins, and the retrieval view.
+
+The retrieval view currently contains 585 rows from warning lights, recalls,
+maintenance routes, image metadata, and validation scenarios.
+
+## FOSS RAG Path
+
+The local FOSS pipeline is the development testbed:
+
+```text
+SQL Server view
+-> Ollama embedding model
+-> Qdrant vector index
+-> Ollama chat model
+-> FastAPI endpoint
+-> Power BI / tester query flow
+```
+
+Current model choices:
+
+- Embeddings: `mxbai-embed-large`
+- Chat/RAG answers: `qwen2.5:14b`
+
+The next implementation step is to ingest `dbo.vw_rag_documents` into Qdrant.
+After that, the API can accept a user’s text description of warning lights,
+retrieve supporting rows, and return a grounded answer plus evidence rows.
+
+## Azure Path
+
+The Azure path should mirror the same data model where possible:
+
+```text
+processed CSVs
+-> Azure Storage / Azure SQL
+-> SQL retrieval view
+-> Azure AI Search
+-> Microsoft Foundry OpenAI models
+-> Power Query
+-> Power BI dashboard
+```
+
+The Azure model deployments are `text-embedding-3-large` and `gpt-4o`.
+
+## Power BI
+
+Power BI should show structured evidence rows instead of relying on an LLM to
+perform chart aggregation. Expected fields include vehicle information,
+warning-light name, severity, recall relevance, recommended service, evidence
+text, and retrieval score.
+
+Image upload is a later extension. The first customer-facing mode should accept
+text descriptions of dashboard warning lights.

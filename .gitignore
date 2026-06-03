@@ -13,23 +13,24 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
-.venv/
+.venv
 venv/
-
-# Generated pipeline outputs
-data/processed/
-data/intermediate/
-data/exports/
-outputs/
-logs/
+uv.lock
+.python-version
 
 # Power BI local/cache artifacts
 *.pbitmp
 *.pbix.tmp
 
-# Raw documents
+# Raw documents and processed files
 docs/*.docx
 docs/*.pdf
+data/processed/
+
+# Codex files
+*.codex
+.agents
+AGENTS.md
 
 # Keep raw datasets only when licensing and size policy allow it.
 # Use Git LFS for large images and PBIX files.

@@ -1,0 +1,128 @@
+#!/usr/bin/env python3
+"""Run the WARNY-BI FastAPI RAG service."""
+
+from __future__ import annotations
+
+import argparse
+import os
+from pathlib import Path
+import sys
+
+from dotenv import load_dotenv
+import uvicorn
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+SRC_DIR = PROJECT_ROOT / "src"
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
+load_dotenv(PROJECT_ROOT / "config" / ".env")
+
+from rag_service.ag import OllamaChatClient, RagAnswerService, RagPromptBuilder
+from rag_service.app import WarnyBiApi
+from rag_service.config import AnswerConfig, OllamaConfig, PromptTemplateConfig, QdrantConfig
+from rag_service.embeddings import OllamaEmbeddingClient
+from rag_service.retrieval import QueryIntentExtractor, SearchResultReranker
+from rag_service.vector_store import QdrantVectorStore
+
+
+class RagApiCli:
+    """CLI entrypoint for the local FastAPI RAG service."""
+
+    DEFAULT_HOST = "127.0.0.1"
+    DEFAULT_PORT = 18080
+    DEFAULT_QDRANT_URL = "http://127.0.0.1:16333"
+    DEFAULT_COLLECTION = "warny_bi_rag"
+    DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
+    DEFAULT_EMBED_MODEL = "mxbai-embed-large"
+    DEFAULT_CHAT_MODEL = "qwen2.5:14b"
+    DEFAULT_ANSWER_PROMPT_PATH = PROJECT_ROOT / "config" / "prompts" / "rag_answer.txt"
+    DEFAULT_EVIDENCE_PROMPT_PATH = PROJECT_ROOT / "config" / "prompts" / "evidence_block.txt"
+
+    def parse_args(self) -> argparse.Namespace:
+        parser = argparse.ArgumentParser(description="Run WARNY-BI local RAG API")
+        parser.add_argument("--host", default=os.getenv("WARNY_API_HOST", self.DEFAULT_HOST))
+        parser.add_argument("--port", type=int, default=int(os.getenv("WARNY_API_PORT", str(self.DEFAULT_PORT))))
+        parser.add_argument("--qdrant-url", default=os.getenv("WARNY_QDRANT_URL", self.DEFAULT_QDRANT_URL))
+        parser.add_argument("--collection", default=os.getenv("WARNY_QDRANT_COLLECTION", self.DEFAULT_COLLECTION))
+        parser.add_argument("--ollama-url", default=os.getenv("WARNY_OLLAMA_URL", self.DEFAULT_OLLAMA_URL))
+        parser.add_argument("--embed-model", default=os.getenv("WARNY_EMBED_MODEL", self.DEFAULT_EMBED_MODEL))
+        parser.add_argument("--chat-model", default=os.getenv("WARNY_CHAT_MODEL", self.DEFAULT_CHAT_MODEL))
+        parser.add_argument("--timeout-seconds", type=float, default=float(os.getenv("WARNY_OLLAMA_TIMEOUT", "120")))
+        parser.add_argument("--default-top-k", type=int, default=int(os.getenv("WARNY_DEFAULT_TOP_K", "5")))
+        parser.add_argument("--max-evidence-chars", type=int, default=int(os.getenv("WARNY_MAX_EVIDENCE_CHARS", "800")))
+        parser.add_argument("--temperature", type=float, default=float(os.getenv("WARNY_CHAT_TEMPERATURE", "0")))
+        parser.add_argument(
+            "--candidate-multiplier",
+            type=int,
+            default=int(os.getenv("WARNY_CANDIDATE_MULTIPLIER", "4")),
+        )
+        parser.add_argument("--max-candidates", type=int, default=int(os.getenv("WARNY_MAX_CANDIDATES", "30")))
+        parser.add_argument(
+            "--answer-prompt-path",
+            type=Path,
+            default=self.path_from_env("WARNY_ANSWER_PROMPT_PATH", self.DEFAULT_ANSWER_PROMPT_PATH),
+        )
+        parser.add_argument(
+            "--evidence-prompt-path",
+            type=Path,
+            default=self.path_from_env("WARNY_EVIDENCE_PROMPT_PATH", self.DEFAULT_EVIDENCE_PROMPT_PATH),
+        )
+        return parser.parse_args()
+
+    def path_from_env(self, name: str, default_path: Path) -> Path:
+        value = os.getenv(name)
+        if not value:
+            return default_path
+        path = Path(value)
+        if path.is_absolute():
+            return path
+        return PROJECT_ROOT / path
+
+    def run(self) -> int:
+        args = self.parse_args()
+        api = self.create_api(args)
+        uvicorn.run(api.app, host=args.host, port=args.port)
+        return 0
+
+    def create_api(self, args: argparse.Namespace) -> WarnyBiApi:
+        ollama_config = OllamaConfig(
+            base_url=args.ollama_url,
+            embedding_model=args.embed_model,
+            chat_model=args.chat_model,
+            timeout_seconds=args.timeout_seconds,
+        )
+        qdrant_config = QdrantConfig(
+            url=args.qdrant_url,
+            collection_name=args.collection,
+            recreate=False,
+        )
+        answer_config = AnswerConfig(
+            default_top_k=args.default_top_k,
+            max_evidence_chars=args.max_evidence_chars,
+            temperature=args.temperature,
+            candidate_multiplier=args.candidate_multiplier,
+            max_candidates=args.max_candidates,
+        )
+        template_config = PromptTemplateConfig(
+            answer_template_path=args.answer_prompt_path,
+            evidence_template_path=args.evidence_prompt_path,
+        )
+        embedding_client = OllamaEmbeddingClient(ollama_config)
+        vector_store = QdrantVectorStore(qdrant_config)
+        reranker = SearchResultReranker(QueryIntentExtractor())
+        prompt_builder = RagPromptBuilder(answer_config, template_config)
+        chat_client = OllamaChatClient(ollama_config, answer_config)
+        answer_service = RagAnswerService(
+            answer_config=answer_config,
+            embedding_client=embedding_client,
+            vector_store=vector_store,
+            reranker=reranker,
+            prompt_builder=prompt_builder,
+            chat_client=chat_client,
+        )
+        return WarnyBiApi(answer_service)
+
+
+if __name__ == "__main__":
+    raise SystemExit(RagApiCli().run())
