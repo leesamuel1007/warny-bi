@@ -1,5 +1,12 @@
 let
-    WarnyApiBaseUrl = "http://127.0.0.1:18080",
+    DefaultWarnyApiBaseUrl = "http://127.0.0.1:18080",
+
+    NormalizeEndpoint = (endpoint as text) as text =>
+        let
+            Trimmed = Text.Trim(endpoint),
+            Normalized = if Text.End(Trimmed, 1) = "/" then Text.Start(Trimmed, Text.Length(Trimmed) - 1) else Trimmed
+        in
+            Normalized,
 
     BuildPayload = (
         query as text,
@@ -34,9 +41,11 @@ let
         optional modelYear as nullable number,
         optional warningLight as nullable text,
         optional topK as nullable number,
-        optional includeImageEvidence as nullable logical
+        optional includeImageEvidence as nullable logical,
+        optional apiBaseUrl as nullable text
     ) as record =>
         let
+            BaseUrl = if apiBaseUrl = null then DefaultWarnyApiBaseUrl else apiBaseUrl,
             Payload = BuildPayload(
                 query,
                 make,
@@ -48,7 +57,7 @@ let
             ),
             Response = Json.Document(
                 Web.Contents(
-                    WarnyApiBaseUrl,
+                    NormalizeEndpoint(BaseUrl),
                     [
                         RelativePath = "query",
                         Headers = [#"Content-Type" = "application/json"],
@@ -57,6 +66,11 @@ let
                 )
             )
         in
-            Response
+            [
+                query = Response[query],
+                answer = Response[answer],
+                evidence = try Response[evidence] otherwise {},
+                raw = Response
+            ]
 in
     WarnyRagQuery

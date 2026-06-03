@@ -6,6 +6,49 @@ let
         in
             Normalized,
 
+    FirstNonNull = (values as list, optional fallback as any) as any =>
+        let
+            NonNullValues = List.RemoveNulls(values),
+            Result = if List.Count(NonNullValues) = 0 then fallback else NonNullValues{0}
+        in
+            Result,
+
+    NormalizeCitation = (citation as record, index as number) as record =>
+        let
+            Content = try Text.From(citation[content]) otherwise "",
+            Url = try Text.From(citation[url]) otherwise null,
+            Title = try Text.From(citation[title]) otherwise null,
+            Filepath = try Text.From(citation[filepath]) otherwise null,
+            ChunkId = try Text.From(citation[chunk_id]) otherwise null,
+            DocumentId = FirstNonNull({ChunkId, Filepath, Title}, "azure-citation-" & Text.From(index))
+        in
+            [
+                score = null,
+                document_id = DocumentId,
+                source_type = "AZURE_AI_SEARCH",
+                source_id = ChunkId,
+                warning_light_id = null,
+                warning_light_name = null,
+                make = null,
+                model = null,
+                model_year = null,
+                component_category = null,
+                severity = null,
+                recommended_service_type = null,
+                source_url = Url,
+                image_path = null,
+                review_status = null,
+                content_preview = Text.Start(Content, 240),
+                rank_score = null,
+                match_reasons = {}
+            ],
+
+    NormalizeCitations = (citations as list) as list =>
+        List.Transform(
+            List.Positions(citations),
+            each NormalizeCitation(citations{_}, _ + 1)
+        ),
+
     BuildSearchParameters = (
         searchEndpoint as text,
         searchKey as text,
@@ -127,11 +170,13 @@ let
             FirstChoice = Response[choices]{0},
             Message = FirstChoice[message],
             Context = try Message[context] otherwise null,
-            Citations = if Context = null then {} else try Context[citations] otherwise {}
+            Citations = if Context = null then {} else try Context[citations] otherwise {},
+            Evidence = NormalizeCitations(Citations)
         in
             [
                 query = query,
                 answer = Message[content],
+                evidence = Evidence,
                 citations = Citations,
                 raw = Response
             ]
