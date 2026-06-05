@@ -43,8 +43,8 @@ class QueryIntent:
     asks_for_image: bool
 
 
-class QueryIntentExtractor:
-    """Extracts vehicle and warning-light intent from short dashboard queries."""
+class QueryTermExtractor:
+    """Extracts deterministic vehicle, warning-light, recall, and image terms."""
 
     def __init__(self) -> None:
         self.stop_words = frozenset(
@@ -143,13 +143,13 @@ class QueryIntentExtractor:
 
 
 class SearchResultReranker:
-    """Reranks vector hits using vehicle, warning-light, and recall intent."""
+    """Reranks vector hits using parsed context and deterministic query terms."""
 
-    def __init__(self, intent_extractor: QueryIntentExtractor) -> None:
-        self.intent_extractor = intent_extractor
+    def __init__(self, term_extractor: QueryTermExtractor) -> None:
+        self.term_extractor = term_extractor
 
     def rerank(self, context: QueryContext, results: tuple[SearchResult, ...], limit: int) -> tuple[SearchResult, ...]:
-        intent = self.intent_extractor.extract(context)
+        intent = self.term_extractor.extract(context)
         ranked = tuple(self.score_result(context, intent, result) for result in results)
         sorted_results = tuple(
             sorted(
@@ -216,7 +216,7 @@ class SearchResultReranker:
         if structured_score is not None:
             return score + structured_score
 
-        result_vehicle_terms = frozenset(self.intent_extractor.tokenize(result.vehicle_text()))
+        result_vehicle_terms = frozenset(self.term_extractor.tokenize(result.vehicle_text()))
         matched_vehicle_terms = intent.vehicle_terms.intersection(result_vehicle_terms)
         if matched_vehicle_terms:
             score += min(0.18, 0.06 * len(matched_vehicle_terms))
@@ -291,7 +291,7 @@ class SearchResultReranker:
             return score
 
         result_warning_tokens = frozenset(
-            self.intent_extractor.tokenize(
+            self.term_extractor.tokenize(
                 " ".join(
                     str(value)
                     for value in (result.warning_light_name, result.component_category)
@@ -349,39 +349,39 @@ class SearchResultReranker:
     def warning_categories_for_result(self, result: SearchResult) -> frozenset[str]:
         categories = set()
 
-        structured_text = self.intent_extractor.normalize(
+        structured_text = self.term_extractor.normalize(
             " ".join(
                 str(value)
                 for value in (result.component_category, result.recommended_service_type)
                 if value is not None
             )
         )
-        structured_tokens = frozenset(self.intent_extractor.tokenize(structured_text))
-        for category, keywords in self.intent_extractor.warning_keyword_groups.items():
-            category_tokens = frozenset(self.intent_extractor.tokenize(category))
+        structured_tokens = frozenset(self.term_extractor.tokenize(structured_text))
+        for category, keywords in self.term_extractor.warning_keyword_groups.items():
+            category_tokens = frozenset(self.term_extractor.tokenize(category))
             if category_tokens and category_tokens.issubset(structured_tokens):
                 categories.add(category)
         if categories:
             return frozenset(categories)
 
-        warning_name_text = self.intent_extractor.normalize(result.warning_light_name or "")
-        warning_name_tokens = frozenset(self.intent_extractor.tokenize(warning_name_text))
-        for category, keywords in self.intent_extractor.warning_keyword_groups.items():
+        warning_name_text = self.term_extractor.normalize(result.warning_light_name or "")
+        warning_name_tokens = frozenset(self.term_extractor.tokenize(warning_name_text))
+        for category, keywords in self.term_extractor.warning_keyword_groups.items():
             if any(
-                self.intent_extractor.keyword_matches(keyword, warning_name_text, warning_name_tokens)
+                self.term_extractor.keyword_matches(keyword, warning_name_text, warning_name_tokens)
                 for keyword in keywords
             ):
                 categories.add(category)
         return frozenset(categories)
 
     def is_primary_recall_document(self, result: SearchResult) -> bool:
-        document_id = self.intent_extractor.normalize(result.document_id or "")
-        source_type = self.intent_extractor.normalize(result.source_type or "")
+        document_id = self.term_extractor.normalize(result.document_id or "")
+        source_type = self.term_extractor.normalize(result.source_type or "")
         return document_id.startswith("recall") or source_type == "nhtsa recalls api"
 
     def is_image_document(self, result: SearchResult) -> bool:
-        document_id = self.intent_extractor.normalize(result.document_id or "")
-        source_type = self.intent_extractor.normalize(result.source_type or "")
+        document_id = self.term_extractor.normalize(result.document_id or "")
+        source_type = self.term_extractor.normalize(result.source_type or "")
         return (
             document_id.startswith("image")
             or "image" in source_type.split()
@@ -390,13 +390,13 @@ class SearchResultReranker:
         )
 
     def is_warning_guide_document(self, result: SearchResult) -> bool:
-        document_id = self.intent_extractor.normalize(result.document_id or "")
-        source_type = self.intent_extractor.normalize(result.source_type or "")
+        document_id = self.term_extractor.normalize(result.document_id or "")
+        source_type = self.term_extractor.normalize(result.source_type or "")
         return document_id.startswith("warning light") or "warning light guide" in source_type
 
     def mentions_recall(self, result: SearchResult) -> bool:
-        source_text = self.intent_extractor.normalize(result.source_text())
+        source_text = self.term_extractor.normalize(result.source_text())
         return "recall" in source_text.split() or "nhtsa" in source_text.split()
 
     def same_text(self, left: str, right: str) -> bool:
-        return self.intent_extractor.normalize(left) == self.intent_extractor.normalize(right)
+        return self.term_extractor.normalize(left) == self.term_extractor.normalize(right)

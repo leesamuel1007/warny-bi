@@ -89,11 +89,7 @@ Test the API directly:
 curl -X POST http://127.0.0.1:18080/query \
   -H "Content-Type: application/json" \
   -d '{
-    "query":"yellow engine light recall",
-    "make":"Hyundai",
-    "model":"Elantra",
-    "model_year":2020,
-    "warning_light":"engine light",
+    "query":"For a 2020 Hyundai Elantra with a yellow engine light, show recall relevance, urgency, recommended service, and evidence.",
     "top_k":5
   }'
 ```

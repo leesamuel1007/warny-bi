@@ -100,12 +100,15 @@ class PromptTemplateConfig:
 
     answer_template_path: Path
     evidence_template_path: Path
+    intent_template_path: Path
 
     def validate(self) -> None:
         if not self.answer_template_path.is_file():
             raise FileNotFoundError(f"Answer prompt template not found: {self.answer_template_path}")
         if not self.evidence_template_path.is_file():
             raise FileNotFoundError(f"Evidence prompt template not found: {self.evidence_template_path}")
+        if not self.intent_template_path.is_file():
+            raise FileNotFoundError(f"Intent prompt template not found: {self.intent_template_path}")
 
 
 @dataclass(frozen=True)

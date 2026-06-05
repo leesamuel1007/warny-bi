@@ -15,11 +15,16 @@ class QueryRequest(BaseModel):
 
     query: str = Field(min_length=1)
     top_k: int | None = Field(default=None, ge=1, le=20)
-    make: str | None = None
-    model: str | None = None
-    model_year: int | None = Field(default=None, ge=1980, le=2039)
-    warning_light: str | None = None
     include_image_evidence: bool = False
+
+
+class IntentResponse(BaseModel):
+    """Structured intent extracted from the natural-language query."""
+
+    make: str | None
+    model: str | None
+    model_year: int | None
+    warning_light: str | None
 
 
 class EvidenceResponse(BaseModel):
@@ -49,6 +54,7 @@ class QueryResponse(BaseModel):
     """Response body for text RAG queries."""
 
     query: str
+    parsed_intent: IntentResponse
     answer: str
     evidence: list[EvidenceResponse]
 
@@ -80,10 +86,6 @@ class WarnyBiApi:
             result = self.answer_service.answer(
                 query=request.query,
                 top_k=request.top_k,
-                make=request.make,
-                model=request.model,
-                model_year=request.model_year,
-                warning_light=request.warning_light,
                 include_image_evidence=request.include_image_evidence,
             )
         except ValueError as error:
@@ -92,6 +94,7 @@ class WarnyBiApi:
             raise HTTPException(status_code=500, detail=str(error)) from error
         return QueryResponse(
             query=result.query,
+            parsed_intent=IntentResponse(**result.parsed_intent.to_dict()),
             answer=result.answer,
             evidence=[
                 EvidenceResponse(**self.evidence_payload(evidence))

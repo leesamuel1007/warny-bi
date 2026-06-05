@@ -143,6 +143,60 @@ class SearchResult:
 
 
 @dataclass(frozen=True)
+class QueryIntentResult:
+    """Structured vehicle/warning intent extracted from a natural-language query."""
+
+    make: str | None = None
+    model: str | None = None
+    model_year: int | None = None
+    warning_light: str | None = None
+
+    @classmethod
+    def empty(cls) -> "QueryIntentResult":
+        return cls()
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> "QueryIntentResult":
+        model_year = payload.get("model_year")
+        parsed_year = cls.optional_int(model_year)
+        return cls(
+            make=cls.optional_text(payload.get("make")),
+            model=cls.optional_text(payload.get("model")),
+            model_year=parsed_year,
+            warning_light=cls.optional_text(payload.get("warning_light")),
+        )
+
+    @classmethod
+    def optional_text(cls, value: Any) -> str | None:
+        if value is None:
+            return None
+        text = str(value).strip()
+        if not text or text.lower() == "null":
+            return None
+        return text
+
+    @classmethod
+    def optional_int(cls, value: Any) -> int | None:
+        if value is None:
+            return None
+        try:
+            parsed_value = int(float(str(value).strip()))
+        except ValueError:
+            return None
+        if parsed_value < 1980 or parsed_value > 2039:
+            return None
+        return parsed_value
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "make": self.make,
+            "model": self.model,
+            "model_year": self.model_year,
+            "warning_light": self.warning_light,
+        }
+
+
+@dataclass(frozen=True)
 class IngestionResult:
     """Summary returned after a Qdrant ingestion run."""
 
@@ -175,10 +229,12 @@ class RagAnswer:
     query: str
     answer: str
     evidence: tuple[SearchResult, ...]
+    parsed_intent: QueryIntentResult
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "query": self.query,
+            "parsed_intent": self.parsed_intent.to_dict(),
             "answer": self.answer,
             "evidence": [result.to_dict() for result in self.evidence],
         }

@@ -10,20 +10,12 @@ let
 
     BuildPayload = (
         query as text,
-        optional make as nullable text,
-        optional model as nullable text,
-        optional modelYear as nullable number,
-        optional warningLight as nullable text,
         optional topK as nullable number,
         optional includeImageEvidence as nullable logical
     ) as record =>
         let
             RawPayload = [
                 query = query,
-                make = make,
-                model = model,
-                model_year = if modelYear = null then null else Int64.From(modelYear),
-                warning_light = warningLight,
                 top_k = if topK = null then 5 else Int64.From(topK),
                 include_image_evidence = if includeImageEvidence = null then false else includeImageEvidence
             ],
@@ -36,10 +28,6 @@ let
 
     WarnyRagQuery = (
         query as text,
-        optional make as nullable text,
-        optional model as nullable text,
-        optional modelYear as nullable number,
-        optional warningLight as nullable text,
         optional topK as nullable number,
         optional includeImageEvidence as nullable logical,
         optional apiBaseUrl as nullable text
@@ -48,10 +36,6 @@ let
             BaseUrl = if apiBaseUrl = null then DefaultWarnyApiBaseUrl else apiBaseUrl,
             Payload = BuildPayload(
                 query,
-                make,
-                model,
-                modelYear,
-                warningLight,
                 topK,
                 includeImageEvidence
             ),
@@ -68,6 +52,7 @@ let
         in
             [
                 query = Response[query],
+                parsed_intent = try Response[parsed_intent] otherwise null,
                 answer = Response[answer],
                 evidence = try Response[evidence] otherwise {},
                 raw = Response

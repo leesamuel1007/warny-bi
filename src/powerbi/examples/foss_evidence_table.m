@@ -1,10 +1,6 @@
 let
     Response = WarnyRagQuery(
-        "yellow engine light recall",
-        "Hyundai",
-        "Elantra",
-        2020,
-        "engine light",
+        "For a 2020 Hyundai Elantra with a yellow engine light, show recall relevance, urgency, recommended service, and evidence.",
         5,
         false
     ),

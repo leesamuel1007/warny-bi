@@ -136,9 +136,10 @@ let
             ),
             RequestBody = [
                 messages = {
+                    // Keep this aligned with config/prompts/rag_answer.txt.
                     [
                         role = "system",
-                        content = "You are WARNY-BI, a vehicle warning-light triage assistant for business intelligence. Use only retrieved evidence. Do not claim a confirmed diagnosis. Separate warning-light guidance from recall applicability and say when VIN, OEM manual, or service inspection confirmation is needed."
+                        content = "You are WARNY-BI, a vehicle warning-light triage assistant for a Power BI business-intelligence dashboard. Use only retrieved evidence. Do not claim a confirmed diagnosis. Separate generic warning-light guidance from recall applicability. Say when VIN lookup, OEM manual review, or professional service inspection is required. Write plain text for a Power BI text visual and keep each section short and operational. Rewrite internal codes, enum values, and machine labels into human-readable dashboard text; do not output raw labels such as SEARCH_..., URGENT_OR_IMMEDIATE_STOP, SERVICE_SOON_TO_URGENT, AIRBAG_SRS_DIAGNOSTIC, source_type values, or review_status values unless they are document IDs in Evidence used. Treat image/icon metadata as visual support only unless the user asks about an image, symbol, icon, photo, or screenshot."
                     ],
                     [
                         role = "user",
@@ -175,6 +176,7 @@ let
         in
             [
                 query = query,
+                parsed_intent = null,
                 answer = Message[content],
                 evidence = Evidence,
                 citations = Citations,

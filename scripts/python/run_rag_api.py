@@ -18,11 +18,17 @@ if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 load_dotenv(PROJECT_ROOT / "config" / ".env")
 
-from rag_service.ag import OllamaChatClient, RagAnswerService, RagPromptBuilder
+from rag_service.ag import (
+    OllamaChatClient,
+    OllamaQueryIntentExtractor,
+    PromptTemplateReader,
+    RagAnswerService,
+    RagPromptBuilder,
+)
 from rag_service.app import WarnyBiApi
 from rag_service.config import AnswerConfig, OllamaConfig, PromptTemplateConfig, QdrantConfig
 from rag_service.embeddings import OllamaEmbeddingClient
-from rag_service.retrieval import QueryIntentExtractor, SearchResultReranker
+from rag_service.retrieval import QueryTermExtractor, SearchResultReranker
 from rag_service.vector_store import QdrantVectorStore
 
 
@@ -38,6 +44,7 @@ class RagApiCli:
     DEFAULT_CHAT_MODEL = "qwen2.5:14b"
     DEFAULT_ANSWER_PROMPT_PATH = PROJECT_ROOT / "config" / "prompts" / "rag_answer.txt"
     DEFAULT_EVIDENCE_PROMPT_PATH = PROJECT_ROOT / "config" / "prompts" / "evidence_block.txt"
+    DEFAULT_INTENT_PROMPT_PATH = PROJECT_ROOT / "config" / "prompts" / "query_intent.txt"
 
     def parse_args(self) -> argparse.Namespace:
         parser = argparse.ArgumentParser(description="Run WARNY-BI local RAG API")
@@ -67,6 +74,11 @@ class RagApiCli:
             "--evidence-prompt-path",
             type=Path,
             default=self.path_from_env("WARNY_EVIDENCE_PROMPT_PATH", self.DEFAULT_EVIDENCE_PROMPT_PATH),
+        )
+        parser.add_argument(
+            "--intent-prompt-path",
+            type=Path,
+            default=self.path_from_env("WARNY_INTENT_PROMPT_PATH", self.DEFAULT_INTENT_PROMPT_PATH),
         )
         return parser.parse_args()
 
@@ -107,17 +119,21 @@ class RagApiCli:
         template_config = PromptTemplateConfig(
             answer_template_path=args.answer_prompt_path,
             evidence_template_path=args.evidence_prompt_path,
+            intent_template_path=args.intent_prompt_path,
         )
         embedding_client = OllamaEmbeddingClient(ollama_config)
         vector_store = QdrantVectorStore(qdrant_config)
-        reranker = SearchResultReranker(QueryIntentExtractor())
-        prompt_builder = RagPromptBuilder(answer_config, template_config)
+        reranker = SearchResultReranker(QueryTermExtractor())
+        template_reader = PromptTemplateReader(template_config)
+        prompt_builder = RagPromptBuilder(answer_config, template_reader)
         chat_client = OllamaChatClient(ollama_config, answer_config)
+        intent_extractor = OllamaQueryIntentExtractor(chat_client, template_reader)
         answer_service = RagAnswerService(
             answer_config=answer_config,
             embedding_client=embedding_client,
             vector_store=vector_store,
             reranker=reranker,
+            intent_extractor=intent_extractor,
             prompt_builder=prompt_builder,
             chat_client=chat_client,
         )
