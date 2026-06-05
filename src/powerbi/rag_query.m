@@ -1,5 +1,5 @@
 let
-    DefaultWarnyApiBaseUrl = "http://143.248.152.211:18080",
+    DefaultWarnyApiBaseUrl = "http://localhost:18080",
 
     NormalizeEndpoint = (endpoint as text) as text =>
         let
