@@ -4,11 +4,6 @@ let
         5,
         false
     ),
-    AnswerTable = Table.FromRecords({
-        [
-            query = Text.From(Response[query]),
-            answer = Text.From(Response[answer])
-        ]
-    })
+    AnswerTable = RagAnswer(Response)
 in
     AnswerTable
