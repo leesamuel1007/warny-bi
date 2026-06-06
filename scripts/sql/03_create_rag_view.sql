@@ -6,12 +6,15 @@ The resulting view is the shared retrieval surface for Azure AI Search,
 Qdrant ingestion, and Power BI evidence inspection.
 */
 
+/*
 USE warny_bi;
 GO
+*/
 
 CREATE OR ALTER VIEW dbo.vw_rag_documents
 AS
 SELECT
+    REPLACE(CONCAT(N'warning_light:', warning_light_id), N':', N'-') AS search_key,
     CONCAT(N'warning_light:', warning_light_id) AS document_id,
     COALESCE(NULLIF(source_type, N''), N'WARNING_LIGHT') AS source_type,
     warning_light_id AS source_id,
@@ -45,6 +48,7 @@ FROM dbo.warning_light_catalog
 UNION ALL
 
 SELECT
+    REPLACE(CONCAT(N'recall:', r.recall_record_id), N':', N'-') AS search_key,
     CONCAT(N'recall:', r.recall_record_id) AS document_id,
     COALESCE(NULLIF(r.source_type, N''), N'RECALL') AS source_type,
     r.recall_record_id AS source_id,
@@ -79,6 +83,7 @@ LEFT JOIN dbo.warning_light_catalog AS w
 UNION ALL
 
 SELECT
+    REPLACE(CONCAT(N'maintenance_service:', service_type_id), N':', N'-') AS search_key,
     CONCAT(N'maintenance_service:', service_type_id) AS document_id,
     COALESCE(NULLIF(source_type, N''), N'MAINTENANCE_SERVICE') AS source_type,
     service_type_id AS source_id,
@@ -108,6 +113,7 @@ FROM dbo.maintenance_service_map
 UNION ALL
 
 SELECT
+    REPLACE(CONCAT(N'image:', i.image_id), N':', N'-') AS search_key,
     CONCAT(N'image:', i.image_id) AS document_id,
     COALESCE(NULLIF(i.source_type, N''), N'IMAGE_METADATA') AS source_type,
     i.image_id AS source_id,
@@ -137,6 +143,7 @@ LEFT JOIN dbo.warning_light_catalog AS w
 UNION ALL
 
 SELECT
+    REPLACE(CONCAT(N'scenario:', scenario_id), N':', N'-') AS search_key,
     CONCAT(N'scenario:', scenario_id) AS document_id,
     COALESCE(NULLIF(source_type, N''), N'VALIDATION_SCENARIO') AS source_type,
     scenario_id AS source_id,
