@@ -9,7 +9,7 @@ import re
 import httpx
 
 from rag_service.config import AnswerConfig, OllamaConfig, PromptTemplateConfig
-from rag_service.documents import QueryIntentResult, RagAnswer, SearchResult
+from rag_service.documents import DashboardAnswer, QueryIntentResult, RagAnswer, SearchResult
 from rag_service.embeddings import OllamaEmbeddingClient
 from rag_service.retrieval import QueryContext, SearchResultReranker
 from rag_service.vector_store import QdrantVectorStore
@@ -153,6 +153,38 @@ class OllamaQueryIntentExtractor:
         return response_text[start : end + 1]
 
 
+class RagDashboardAnswerParser:
+    """Parses and normalizes dashboard JSON returned by the answer model."""
+
+    def parse(
+        self,
+        response_text: str,
+        query: str,
+        parsed_intent: QueryIntentResult,
+        evidence: tuple[SearchResult, ...],
+    ) -> DashboardAnswer:
+        try:
+            payload = json.loads(self.json_object_text(response_text))
+        except (json.JSONDecodeError, ValueError):
+            payload = {"summary": response_text}
+        if not isinstance(payload, dict):
+            payload = {"summary": response_text}
+        return DashboardAnswer.from_payload(
+            payload=payload,
+            query=query,
+            parsed_intent=parsed_intent,
+            evidence=evidence,
+            fallback_summary=response_text,
+        )
+
+    def json_object_text(self, response_text: str) -> str:
+        start = response_text.find("{")
+        end = response_text.rfind("}")
+        if start < 0 or end < start:
+            raise ValueError(f"Answer generation did not return a JSON object: {response_text}")
+        return response_text[start : end + 1]
+
+
 class RagAnswerService:
     """Retrieves evidence from Qdrant and generates a grounded answer."""
 
@@ -165,6 +197,7 @@ class RagAnswerService:
         intent_extractor: OllamaQueryIntentExtractor,
         prompt_builder: RagPromptBuilder,
         chat_client: OllamaChatClient,
+        answer_parser: RagDashboardAnswerParser | None = None,
     ) -> None:
         self.answer_config = answer_config
         self.embedding_client = embedding_client
@@ -173,6 +206,7 @@ class RagAnswerService:
         self.intent_extractor = intent_extractor
         self.prompt_builder = prompt_builder
         self.chat_client = chat_client
+        self.answer_parser = answer_parser or RagDashboardAnswerParser()
 
     def answer(
         self,
@@ -199,4 +233,5 @@ class RagAnswerService:
         evidence = self.reranker.rerank(context, candidates, limit)
         prompt = self.prompt_builder.build(context.search_text(), evidence)
         answer_text = self.chat_client.complete(prompt)
-        return RagAnswer(query=clean_query, answer=answer_text, evidence=evidence, parsed_intent=parsed_intent)
+        answer = self.answer_parser.parse(answer_text, clean_query, parsed_intent, evidence)
+        return RagAnswer(query=clean_query, answer=answer, evidence=evidence, parsed_intent=parsed_intent)

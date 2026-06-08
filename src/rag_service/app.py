@@ -18,13 +18,37 @@ class QueryRequest(BaseModel):
     include_image_evidence: bool = False
 
 
-class IntentResponse(BaseModel):
-    """Structured intent extracted from the natural-language query."""
+class ParsedAnswerResponse(BaseModel):
+    """Parsed vehicle and warning-light fields for dashboard visuals."""
 
     make: str | None
     model: str | None
     model_year: int | None
     warning_light: str | None
+    warning_light_id: str | None
+    component_category: str | None
+
+
+class AnswerResponse(BaseModel):
+    """Structured answer fields returned to Power BI."""
+
+    summary: str
+    severity_label: str
+    severity_level: int
+    severity_color: str
+    severity_icon_key: str
+    stop_immediately: bool
+    recommended_service: str
+    recall_status: str
+    recall_status_level: int
+    recall_status_color: str
+    recall_icon_key: str
+    possible_causes: list[str]
+    immediate_action: str
+    primary_campaign: str | None
+    recall_interpretation: str
+    evidence_used: list[str]
+    parsed: ParsedAnswerResponse
 
 
 class EvidenceResponse(BaseModel):
@@ -33,15 +57,25 @@ class EvidenceResponse(BaseModel):
     score: float | None
     document_id: str | None
     source_type: str | None
+    source_type_label: str
     source_id: str | None
+    rank: int | None
+    confidence_label: str
+    evidence_level: str
+    evidence_level_label: str
     warning_light_id: str | None
     warning_light_name: str | None
     make: str | None
     model: str | None
     model_year: int | None
+    campaign_id: str | None
+    recall_relevance: str | None
+    recall_relevance_label: str | None
     component_category: str | None
     severity: str | None
+    severity_label: str | None
     recommended_service_type: str | None
+    recommended_service_label: str | None
     source_url: str | None
     image_path: str | None
     review_status: str | None
@@ -54,8 +88,7 @@ class QueryResponse(BaseModel):
     """Response body for text RAG queries."""
 
     query: str
-    parsed_intent: IntentResponse
-    answer: str
+    answer: AnswerResponse
     evidence: list[EvidenceResponse]
 
 
@@ -94,8 +127,7 @@ class WarnyBiApi:
             raise HTTPException(status_code=500, detail=str(error)) from error
         return QueryResponse(
             query=result.query,
-            parsed_intent=IntentResponse(**result.parsed_intent.to_dict()),
-            answer=result.answer,
+            answer=AnswerResponse(**result.answer.to_dict()),
             evidence=[
                 EvidenceResponse(**self.evidence_payload(evidence))
                 for evidence in result.evidence

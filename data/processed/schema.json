@@ -1,0 +1,1583 @@
+{
+  "source": "generated_from_csv",
+  "operator_review_required": true,
+  "tables": [
+    {
+      "file": "dataset_sources.csv",
+      "table_name": "dataset_sources",
+      "row_count": 7,
+      "columns": [
+        {
+          "name": "source_id",
+          "inferred_type": "category",
+          "preferred_type": "identifier",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 7,
+          "primary_key": true,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "source_name",
+          "inferred_type": "category",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 7,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "source_type",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 7,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "source_url",
+          "inferred_type": "category",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 7,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "used_for",
+          "inferred_type": "category",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 7,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "license_or_access_note",
+          "inferred_type": "category",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 7,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "collection_note",
+          "inferred_type": "category",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 7,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        }
+      ],
+      "primary_key": "source_id",
+      "foreign_keys": []
+    },
+    {
+      "file": "maintenance_service_map.csv",
+      "table_name": "maintenance_service_map",
+      "row_count": 34,
+      "columns": [
+        {
+          "name": "service_type_id",
+          "inferred_type": "text",
+          "preferred_type": "identifier",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 34,
+          "primary_key": true,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "recommended_service_type",
+          "inferred_type": "text",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 34,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "component_category",
+          "inferred_type": "text",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 29,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "urgency_level",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 3,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "typical_customer_message",
+          "inferred_type": "text",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(MAX)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 34,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "typical_action",
+          "inferred_type": "text",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 34,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "business_user",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 1,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "expected_value",
+          "inferred_type": "category",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 1,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "evidence_level_required",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 1,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "rag_ready_content",
+          "inferred_type": "text",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(MAX)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 34,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "source_type",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 1,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "source_url",
+          "inferred_type": "category",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 1,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "review_status",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 1,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        }
+      ],
+      "primary_key": "service_type_id",
+      "foreign_keys": []
+    },
+    {
+      "file": "recall_data.csv",
+      "table_name": "recall_data",
+      "row_count": 165,
+      "columns": [
+        {
+          "name": "recall_record_id",
+          "inferred_type": "text",
+          "preferred_type": "identifier",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 165,
+          "primary_key": true,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "campaign_id",
+          "inferred_type": "text",
+          "preferred_type": "identifier",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 145,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "make",
+          "inferred_type": "category",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 9,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "model",
+          "inferred_type": "text",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 26,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "model_year",
+          "inferred_type": "integer",
+          "preferred_type": "integer",
+          "suggested_sql_type": "INT",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 6,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "component",
+          "inferred_type": "text",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 77,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "defect_summary",
+          "inferred_type": "text",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(MAX)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 144,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "consequence",
+          "inferred_type": "text",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(MAX)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 127,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "remedy",
+          "inferred_type": "text",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(MAX)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 145,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "related_warning_light_id",
+          "inferred_type": "category",
+          "preferred_type": "identifier",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 19,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "recall_relevance_rule",
+          "inferred_type": "text",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(MAX)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 146,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "severity_override",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 6,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "rag_ready_content",
+          "inferred_type": "text",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(MAX)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 165,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "source_type",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 1,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "source_url",
+          "inferred_type": "text",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 26,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "review_status",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 1,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        }
+      ],
+      "primary_key": "recall_record_id",
+      "foreign_keys": [
+        {
+          "column": "related_warning_light_id",
+          "references_table": "warning_light_catalog",
+          "references_column": "warning_light_id",
+          "status": "inferred"
+        }
+      ]
+    },
+    {
+      "file": "scenario_validation.csv",
+      "table_name": "scenario_validation",
+      "row_count": 20,
+      "columns": [
+        {
+          "name": "scenario_id",
+          "inferred_type": "category",
+          "preferred_type": "identifier",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 20,
+          "primary_key": true,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "make",
+          "inferred_type": "category",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 10,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "model",
+          "inferred_type": "category",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 20,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "model_year",
+          "inferred_type": "integer",
+          "preferred_type": "integer",
+          "suggested_sql_type": "INT",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 5,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "warning_light_name",
+          "inferred_type": "category",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 19,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "warning_light_color",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 5,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "user_symptom",
+          "inferred_type": "category",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 20,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "expected_severity",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 5,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "expected_action",
+          "inferred_type": "category",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 20,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "expected_recall_relevance",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 20,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "expected_service_type",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 17,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "expected_output_format",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 1,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "pass_condition",
+          "inferred_type": "category",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 1,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "failure_mode_to_watch",
+          "inferred_type": "category",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 1,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "source_type",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 1,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "source_url",
+          "inferred_type": "category",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 1,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "review_status",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 1,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        }
+      ],
+      "primary_key": "scenario_id",
+      "foreign_keys": []
+    },
+    {
+      "file": "warning_light_catalog.csv",
+      "table_name": "warning_light_catalog",
+      "row_count": 64,
+      "columns": [
+        {
+          "name": "warning_light_id",
+          "inferred_type": "text",
+          "preferred_type": "identifier",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 64,
+          "primary_key": true,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "warning_light_name",
+          "inferred_type": "text",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 64,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "symbol_label",
+          "inferred_type": "text",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 64,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "color",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 3,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "severity",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 4,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "stop_immediately",
+          "inferred_type": "category",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 4,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "component_category",
+          "inferred_type": "text",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 31,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "description",
+          "inferred_type": "text",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 64,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "possible_causes",
+          "inferred_type": "text",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 31,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "immediate_action",
+          "inferred_type": "category",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 6,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "recommended_service_type",
+          "inferred_type": "text",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 34,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "rag_ready_content",
+          "inferred_type": "text",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(MAX)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 64,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "source_type",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 1,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "source_url",
+          "inferred_type": "category",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 1,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "review_status",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 1,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        }
+      ],
+      "primary_key": "warning_light_id",
+      "foreign_keys": []
+    },
+    {
+      "file": "warning_light_catalog_revised.csv",
+      "table_name": "warning_light_catalog_revised",
+      "row_count": 64,
+      "columns": [
+        {
+          "name": "warning_light_id",
+          "inferred_type": "text",
+          "preferred_type": "identifier",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 64,
+          "primary_key": true,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "warning_light_name",
+          "inferred_type": "text",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 64,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "symbol_label",
+          "inferred_type": "text",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 64,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "color",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 3,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "severity",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 4,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "stop_immediately",
+          "inferred_type": "category",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 4,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "component_category",
+          "inferred_type": "text",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 31,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "description",
+          "inferred_type": "text",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 64,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "possible_causes",
+          "inferred_type": "text",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 33,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "immediate_action",
+          "inferred_type": "category",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 6,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "recommended_service_type",
+          "inferred_type": "text",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 34,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "rag_ready_content",
+          "inferred_type": "text",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(MAX)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 64,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "source_type",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 1,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "source_url",
+          "inferred_type": "category",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 1,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "review_status",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 1,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        }
+      ],
+      "primary_key": "warning_light_id",
+      "foreign_keys": [
+        {
+          "column": "warning_light_id",
+          "references_table": "warning_light_catalog",
+          "references_column": "warning_light_id",
+          "status": "inferred"
+        }
+      ]
+    },
+    {
+      "file": "warning_light_image_catalog.csv",
+      "table_name": "warning_light_image_catalog",
+      "row_count": 302,
+      "columns": [
+        {
+          "name": "image_id",
+          "inferred_type": "text",
+          "preferred_type": "identifier",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 302,
+          "primary_key": true,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "class_folder",
+          "inferred_type": "text",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 64,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "class_id_raw",
+          "inferred_type": "text",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 167,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "image_file",
+          "inferred_type": "text",
+          "preferred_type": "path",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 302,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "normalize_slashes"
+          ]
+        },
+        {
+          "name": "file_ext",
+          "inferred_type": "category",
+          "preferred_type": "path",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 4,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "normalize_slashes"
+          ]
+        },
+        {
+          "name": "image_count_in_class",
+          "inferred_type": "integer",
+          "preferred_type": "integer",
+          "suggested_sql_type": "INT",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 11,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "warning_light_id",
+          "inferred_type": "text",
+          "preferred_type": "identifier",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 64,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "label",
+          "inferred_type": "text",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 64,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "label_confidence",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 3,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "mapping_status",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 1,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "image_url_or_blob_path",
+          "inferred_type": "text",
+          "preferred_type": "path",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 302,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "normalize_slashes"
+          ]
+        },
+        {
+          "name": "note",
+          "inferred_type": "category",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 3,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        },
+        {
+          "name": "source_type",
+          "inferred_type": "category",
+          "preferred_type": "category",
+          "suggested_sql_type": "NVARCHAR(50)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 3,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces",
+            "uppercase",
+            "remove_punctuation_except_period",
+            "spaces_to_underscore"
+          ]
+        },
+        {
+          "name": "source_url",
+          "inferred_type": "category",
+          "preferred_type": "text",
+          "suggested_sql_type": "NVARCHAR(255)",
+          "blank_count": 0,
+          "null_like_count": 0,
+          "unique_count": 3,
+          "primary_key": false,
+          "normalization": [
+            "trim",
+            "collapse_spaces"
+          ]
+        }
+      ],
+      "primary_key": "image_id",
+      "foreign_keys": [
+        {
+          "column": "warning_light_id",
+          "references_table": "warning_light_catalog",
+          "references_column": "warning_light_id",
+          "status": "inferred"
+        }
+      ]
+    }
+  ]
+}
