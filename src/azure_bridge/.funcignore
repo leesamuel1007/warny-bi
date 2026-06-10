@@ -1,0 +1,7 @@
+local.settings.json
+*.pyc
+__pycache__/
+.venv/
+.python_packages/
+.pytest_cache/
+.ruff_cache/

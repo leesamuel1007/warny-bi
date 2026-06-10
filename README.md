@@ -38,6 +38,7 @@ Important paths:
 | `scripts/python/` | Dataset preprocessing, SQL load helpers, and backend utility scripts. |
 | `src/rag_service/` | Backend service code maintained for private no-cost prompt testing. |
 | `src/powerbi/` | Power Query M files for Power BI Desktop. |
+| `src/azure_bridge/` | Azure Functions bridge for automatic query logging. |
 | `config/prompts/rag_answer.txt` | Canonical dashboard-answer prompt. |
 | `docs/` | Architecture notes, data inventory, RAG contract, tutorial PDFs, and dashboard mockups. |
 
@@ -52,9 +53,15 @@ processed CSV files
 -> dbo.vw_rag_documents
 -> Azure AI Search
 -> Azure OpenAI GPT-4o with Azure AI Search data source
+-> Azure Function bridge
 -> Power Query
 -> Power BI dashboard
 ```
+
+The Azure Function bridge is used so Page 3 can log structured interactions to
+Azure SQL automatically. It keeps the Power BI dashboard simple: Power Query
+calls one `/api/query` endpoint, then reads the logged interaction views from
+Azure SQL.
 
 The Power BI dashboard consumes this logical response shape:
 
@@ -91,18 +98,15 @@ Chat Playground. In other words, you already have:
 - an Azure AI Search index created from the WARNY-BI RAG documents
 - a successful Chat Playground test using "Add your data"
 
-This follows the project tutorial's Part 3 pattern: Power Query sends a POST
-request to Azure OpenAI Chat Completions, includes Azure AI Search as the data
-source, receives the model response, and converts it into Power BI tables.
+The course tutorial's core Azure RAG pattern is still used: Azure OpenAI GPT-4o
+answers with Azure AI Search as the data source. The difference is that Power BI
+calls the project Azure Function bridge instead of calling Azure OpenAI
+directly, because the professor requested automatic structured interaction
+logging for the dashboard.
 
-The difference from the tutorial is organization. The tutorial puts everything
-in one large M script with hard-coded values. This project keeps the reusable
-logic in function files and stores Azure values as Power BI parameters inside
-the `.pbix` file.
-
-Power BI parameters are better than committing API keys to Git, but they are
-not a full secret vault. Do not publish or share a `.pbix` containing real keys
-unless that is intended for the project demo.
+Keep Azure OpenAI, Azure AI Search, and Azure SQL secrets in the Azure Function
+App settings. The `.pbix` file should only contain the bridge URL, optional
+function key, prompt, and display parameters.
 
 ### Azure Values To Collect
 
@@ -111,39 +115,74 @@ Create these Power BI parameters in **Transform data** -> **Manage Parameters**.
 | Parameter | Type | Where to get it |
 | --- | --- | --- |
 | `BasePrompt` | Text | The dashboard question, for example `2020 Hyundai Elantra yellow engine light recall`. |
-| `AzureOpenAIEndpoint` | Text | Azure OpenAI resource endpoint, for example `https://<resource>.openai.azure.com`. |
-| `AzureOpenAIKey` | Text | Azure OpenAI resource key. The tutorial pastes this into the script; this repo uses a Power BI parameter. |
-| `AzureChatDeployment` | Text | GPT-4o deployment name from Foundry, for example `gpt-4o`. Use the deployment name, not just the model family. |
-| `AzureSearchEndpoint` | Text | Azure AI Search endpoint, for example `https://<search-service>.search.windows.net`. |
-| `AzureSearchIndex` | Text | Azure AI Search index name, for example `warny-bi-rag`. |
-| `AzureSearchKey` | Text | Azure AI Search **Primary Admin Key** from Azure AI Search -> Settings -> Keys. This follows the tutorial. |
-| `AzureApiVersion` | Text | Use `2024-05-01-preview` unless you intentionally change the API version. |
+| `AzureBridgeBaseUrl` | Text | Azure Function App base URL, for example `https://<function-app>.azurewebsites.net`. |
+| `AzureBridgeFunctionKey` | Text | Function key from Azure Function App -> Functions -> `query` -> Function Keys. Leave blank only if the function uses anonymous auth. |
 | `AzureTopK` | Whole Number | Start with `5`. |
-| `AzureStrictness` | Whole Number | Start with `3`. |
-| `AzureQueryType` | Text | Start with `simple`. Use `semantic` only if the search index has a semantic configuration. |
-| `AzureSemanticConfiguration` | Text | Leave blank unless using semantic search. |
-| `AzureEmbeddingDeployment` | Text | Leave blank unless the Azure Search setup requires an embedding deployment for vector query mode. |
-| `AzureFilter` | Text | Leave blank unless using an Azure Search OData filter. |
-| `AzureRoleInformation` | Text | Leave blank to use the embedded dashboard prompt in `azure_query.m`. |
+| `AzureIncludeImages` | True/False | Start with `false`. |
+| `AzureSqlServer` | Text | Azure SQL server host, for example `freewarnybisqlserver.database.windows.net`. |
+| `AzureSqlDatabase` | Text | Azure SQL database name, for example `free-warny-bi-sql-database`. |
 
-When Power BI asks for credentials for the Azure OpenAI endpoint, select
-**Anonymous**. Authentication is handled inside the M request through:
+When Power BI asks for credentials for the Azure Function URL, select
+**Anonymous**. The function key is passed in an HTTP header by Power Query.
 
-```powerquery
-Headers = [
-    #"Content-Type" = "application/json",
-    #"api-key" = AzureOpenAIKey
-]
-```
+When Power BI asks for credentials for Azure SQL, use the same SQL
+authentication or Microsoft authentication method that works in DBeaver.
 
-Azure AI Search authentication is also passed inside the JSON payload:
+### Azure Function App Settings
 
-```powerquery
-authentication = [
-    type = "api_key",
-    key = AzureSearchKey
-]
-```
+Create these app settings in the Azure Function App. Do not put these values in
+Power Query:
+
+| App setting | Purpose |
+| --- | --- |
+| `WARNY_AZURE_OPENAI_ENDPOINT` | Azure OpenAI resource endpoint. |
+| `WARNY_AZURE_OPENAI_KEY` | Azure OpenAI resource key. |
+| `WARNY_AZURE_CHAT_DEPLOYMENT` | GPT-4o deployment name. |
+| `WARNY_AZURE_SEARCH_ENDPOINT` | Azure AI Search endpoint. |
+| `WARNY_AZURE_SEARCH_KEY` | Azure AI Search admin/query key. |
+| `WARNY_AZURE_SEARCH_INDEX` | Azure AI Search index name, for example `warny-bi-rag`. |
+| `SqlConnectionString` | Azure SQL connection string for the output binding. |
+| `WARNY_QUERY_LOG_ENABLED` | Use `true` for the Page 3 logging demo. |
+| `WARNY_QUERY_LOG_PIPELINE` | Use `azure`. |
+
+Optional app settings:
+
+| App setting | Default |
+| --- | --- |
+| `WARNY_AZURE_OPENAI_API_VERSION` | `2024-05-01-preview` |
+| `WARNY_AZURE_TOP_K` | `5` |
+| `WARNY_AZURE_STRICTNESS` | `3` |
+| `WARNY_AZURE_QUERY_TYPE` | `simple` |
+| `WARNY_AZURE_SEMANTIC_CONFIGURATION` | blank |
+| `WARNY_AZURE_EMBEDDING_DEPLOYMENT` | blank |
+| `WARNY_AZURE_FILTER` | blank |
+| `WARNY_ROLE_INFORMATION` | blank; the bridge uses the shared dashboard prompt by default. |
+
+Before testing the bridge, run `scripts/sql/05_create_query_log.sql` in Azure
+SQL so `dbo.query_log` and `dbo.query_log_evidence` exist.
+
+### Create The Azure Function App
+
+In Azure Portal:
+
+1. Search for **Function App**.
+2. Click **Create**.
+3. Use the same subscription and resource group as the other WARNY-BI Azure
+   resources.
+4. Runtime stack: **Python**.
+5. Hosting plan: use the cheapest serverless/flex consumption option available
+   for the course account unless your Azure subscription requires another plan.
+6. Region: use the same region as Azure OpenAI, Azure AI Search, and Azure SQL
+   when possible.
+7. Create or select the storage account requested by Azure Functions.
+8. After deployment, open the Function App and add the app settings listed
+   above under **Settings** -> **Environment variables** or **Configuration**.
+9. Deploy the code in `src/azure_bridge/`.
+10. Open the deployed `query` function and copy its function key into the
+    Power BI parameter `AzureBridgeFunctionKey`.
+
+The bridge code uses Azure SQL output bindings, configured in `host.json`, so
+the connection string setting must be named exactly `SqlConnectionString`.
 
 ### Power Query Files
 
@@ -151,12 +190,15 @@ The Azure Power BI setup uses these files:
 
 | Power BI query name | Source file | Enable load? | Purpose |
 | --- | --- | --- | --- |
-| `Query` | `src/powerbi/azure_query.m` | No | Function that calls Azure OpenAI with Azure AI Search attached. |
+| `Query` | `src/powerbi/azure_query.m` | No | Function that calls the Azure Function bridge. |
 | `AnswerResponse` | `src/powerbi/answer_function.m` | No | Function that turns the response record into one wide answer table. |
 | `EvidenceResponse` | `src/powerbi/evidence_function.m` | No | Function that turns response evidence into one evidence table. |
+| `LogQuery` | `src/powerbi/log_query.m` | No | Function that reads Azure SQL log views for Page 3. |
 | `Response` | create manually in Power BI | No | Calls `Query(...)` using Azure parameters. |
 | `Answer` | `src/powerbi/answer_query.m` | Yes | Actual dashboard answer table. |
 | `Evidence` | `src/powerbi/evidence_query.m` | Yes | Actual dashboard evidence table. |
+| `QueryLog` | create manually in Power BI | Yes | Page 3 dashboard table from `dbo.vw_query_log_dashboard`. |
+| `QueryLogEvidence` | create manually in Power BI | Yes | Page 3 evidence-detail table from `dbo.vw_query_log_evidence`. |
 
 The function query is named `Query` on purpose. For the shared Azure workflow,
 paste `azure_query.m` into `Query`.
@@ -178,6 +220,7 @@ Repeat the same process for:
 
 - `src/powerbi/answer_function.m` -> query name `AnswerResponse`
 - `src/powerbi/evidence_function.m` -> query name `EvidenceResponse`
+- `src/powerbi/log_query.m` -> query name `LogQuery`
 
 ### Add The Response Query
 
@@ -185,25 +228,12 @@ Create a blank query named `Response`. Paste this into Advanced Editor:
 
 ```powerquery
 let
-    NullIfBlank = (value as nullable text) as nullable text =>
-        if value = null or Text.Trim(value) = "" then null else Text.Trim(value),
-
     Source = Query(
         BasePrompt,
-        AzureOpenAIEndpoint,
-        AzureOpenAIKey,
-        AzureChatDeployment,
-        AzureSearchEndpoint,
-        AzureSearchKey,
-        AzureSearchIndex,
-        NullIfBlank(AzureEmbeddingDeployment),
-        NullIfBlank(AzureApiVersion),
-        NullIfBlank(AzureQueryType),
-        NullIfBlank(AzureSemanticConfiguration),
+        AzureBridgeBaseUrl,
+        AzureBridgeFunctionKey,
         AzureTopK,
-        AzureStrictness,
-        NullIfBlank(AzureFilter),
-        NullIfBlank(AzureRoleInformation)
+        AzureIncludeImages
     )
 in
     Source
@@ -234,6 +264,30 @@ in
 ```
 
 Enable load for `Answer` and `Evidence`.
+
+### Add Page 3 Log Tables
+
+Create a blank query named `QueryLog`. Paste this into Advanced Editor:
+
+```powerquery
+let
+    Source = LogQuery(AzureSqlServer, AzureSqlDatabase, "vw_query_log_dashboard", "dbo")
+in
+    Source
+```
+
+Create another blank query named `QueryLogEvidence`:
+
+```powerquery
+let
+    Source = LogQuery(AzureSqlServer, AzureSqlDatabase, "vw_query_log_evidence", "dbo")
+in
+    Source
+```
+
+Enable load for both log tables. Use these for the Page 3 visuals: query volume
+over time, common makes/models/warning lights, high-impact query count, recall
+candidate count, evidence source distribution, and confidence breakdown.
 
 `Answer` is a one-row table for cards and text visuals. Useful columns include:
 
@@ -287,13 +341,12 @@ Then refresh previews in this order:
 
 If `Response` fails, first check:
 
-- OpenAI endpoint
-- OpenAI key
-- GPT-4o deployment name
-- Search endpoint
-- Search index name
-- Search Primary Admin Key
-- API version
+- `AzureBridgeBaseUrl`
+- `AzureBridgeFunctionKey`
+- whether the Azure Function `/api/health` endpoint responds
+- whether the Azure Function App settings contain the OpenAI, Search, and SQL values
+- whether `scripts/sql/05_create_query_log.sql` has been run in Azure SQL
+- whether the Azure SQL firewall permits the Function App connection path
 
 If `Response` works but `Answer` or `Evidence` fails, re-copy
 `answer_function.m`, `evidence_function.m`, `answer_query.m`, or
