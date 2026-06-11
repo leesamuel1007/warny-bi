@@ -8,7 +8,7 @@
 *secrets*
 local.settings.json
 
-# Python/runtime artifacts
+# Python Files
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -30,7 +30,7 @@ docs/dashboard_*.png
 
 # Agentic Files
 .codex/
-.agents
+.agents/
 AGENTS.md
 
 # Keep raw datasets only when licensing and size policy allow it.
