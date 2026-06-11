@@ -27,8 +27,9 @@ uv.lock
 docs/*.docx
 docs/*.pdf
 docs/dashboard_*.png
-# Codex files
-*.codex
+
+# Agentic Files
+.codex/
 .agents
 AGENTS.md
 
