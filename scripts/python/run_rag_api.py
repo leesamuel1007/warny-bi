@@ -44,9 +44,9 @@ class RagApiCli:
     DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
     DEFAULT_EMBED_MODEL = "mxbai-embed-large"
     DEFAULT_CHAT_MODEL = "qwen2.5:14b"
-    DEFAULT_ANSWER_PROMPT_PATH = PROJECT_ROOT / "config" / "prompts" / "rag_answer.txt"
-    DEFAULT_EVIDENCE_PROMPT_PATH = PROJECT_ROOT / "config" / "prompts" / "evidence_block.txt"
-    DEFAULT_INTENT_PROMPT_PATH = PROJECT_ROOT / "config" / "prompts" / "query_intent.txt"
+    DEFAULT_ANSWER_PROMPT_PATH = PROJECT_ROOT / "config" / "prompts" / "rag_answer_foss.txt"
+    DEFAULT_EVIDENCE_PROMPT_PATH = PROJECT_ROOT / "config" / "prompts" / "evidence_block_foss.txt"
+    DEFAULT_INTENT_PROMPT_PATH = PROJECT_ROOT / "config" / "prompts" / "query_intent_foss.txt"
 
     def parse_args(self) -> argparse.Namespace:
         parser = argparse.ArgumentParser(description="Run WARNY-BI local RAG API")
@@ -69,26 +69,20 @@ class RagApiCli:
         parser.add_argument("--max-candidates", type=int, default=int(os.getenv("WARNY_MAX_CANDIDATES", "30")))
         parser.add_argument("--log-enabled", action="store_true", default=self.bool_from_env("WARNY_LOG_ENABLED", False))
         parser.add_argument("--log-pipeline", default=os.getenv("WARNY_LOG_PIPELINE", "foss_fastapi"))
-        parser.add_argument("--log-sql-driver", default=os.getenv("WARNY_LOG_SQL_DRIVER", os.getenv("WARNY_SQL_DRIVER", "ODBC Driver 18 for SQL Server")))
-        parser.add_argument("--log-sql-server", default=os.getenv("WARNY_LOG_SQL_SERVER", os.getenv("WARNY_SQL_SERVER", "127.0.0.1,1433")))
-        parser.add_argument("--log-sql-database", default=os.getenv("WARNY_LOG_SQL_DATABASE", os.getenv("WARNY_SQL_DATABASE", "warny_bi")))
-        parser.add_argument("--log-sql-user", default=os.getenv("WARNY_LOG_SQL_USER", os.getenv("WARNY_SQL_USER")))
-        parser.add_argument("--log-sql-password", default=os.getenv("WARNY_LOG_SQL_PASSWORD", os.getenv("WARNY_SQL_PASSWORD")))
-        parser.add_argument("--log-sql-connection-string", default=os.getenv("WARNY_LOG_SQL_CONNECTION_STRING"))
         parser.add_argument(
             "--answer-prompt-path",
             type=Path,
-            default=self.path_from_env("WARNY_ANSWER_PROMPT_PATH", self.DEFAULT_ANSWER_PROMPT_PATH),
+            default=self.path_from_env("WARNY_FOSS_ANSWER_PROMPT_PATH", self.DEFAULT_ANSWER_PROMPT_PATH),
         )
         parser.add_argument(
             "--evidence-prompt-path",
             type=Path,
-            default=self.path_from_env("WARNY_EVIDENCE_PROMPT_PATH", self.DEFAULT_EVIDENCE_PROMPT_PATH),
+            default=self.path_from_env("WARNY_FOSS_EVIDENCE_PROMPT_PATH", self.DEFAULT_EVIDENCE_PROMPT_PATH),
         )
         parser.add_argument(
             "--intent-prompt-path",
             type=Path,
-            default=self.path_from_env("WARNY_INTENT_PROMPT_PATH", self.DEFAULT_INTENT_PROMPT_PATH),
+            default=self.path_from_env("WARNY_FOSS_INTENT_PROMPT_PATH", self.DEFAULT_INTENT_PROMPT_PATH),
         )
         return parser.parse_args()
 
@@ -163,12 +157,12 @@ class RagApiCli:
         if not log_config.enabled:
             return NullQueryLogger()
         sql_config = SqlConfig(
-            driver=args.log_sql_driver,
-            server=args.log_sql_server,
-            database=args.log_sql_database,
-            user=args.log_sql_user,
-            password=args.log_sql_password,
-            connection_string_override=args.log_sql_connection_string,
+            driver=os.getenv("WARNY_SQL_DRIVER", "ODBC Driver 18 for SQL Server"),
+            server=os.getenv("WARNY_SQL_SERVER", "127.0.0.1,1433"),
+            database=os.getenv("WARNY_SQL_DATABASE", "warny_bi"),
+            user=os.getenv("WARNY_SQL_USER"),
+            password=os.getenv("WARNY_SQL_PASSWORD"),
+            connection_string_override=os.getenv("WARNY_SQL_CONNECTION_STRING"),
         )
         return SqlQueryLogger.from_sql_config(log_config, sql_config)
 

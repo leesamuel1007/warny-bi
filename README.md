@@ -37,7 +37,8 @@ the prompt privately and report the result.
 | `scripts/python/` | Dataset preprocessing, SQL load helpers, and backend utility scripts. |
 | `src/rag_service/` | Private FOSS backend used by the maintainer for no-cost prompt testing. |
 | `src/powerbi/` | Power Query M files for Power BI Desktop. |
-| `config/prompts/rag_answer.txt` | Canonical dashboard-answer prompt. |
+| `config/prompts/rag_answer_azure.txt` | Azure Logic App role-information prompt. |
+| `config/prompts/rag_answer_foss.txt` | FOSS answer-generation prompt with local `{query}` and `{evidence}` placeholders. |
 | `docs/` | Architecture notes, data inventory, RAG contract, tutorial PDFs, and dashboard mockups. |
 
 ## Pipeline Overview
@@ -99,10 +100,13 @@ row directly into `dbo.query_log`.
 In the Logic App, after the Azure OpenAI HTTP action succeeds, add an Azure SQL
 **Insert row** action for table `dbo.query_log`.
 
-The Azure OpenAI HTTP action should use the dashboard prompt in
-`config/prompts/rag_answer.txt` as its `role_information` or system/developer
-instruction. Power BI does not send the system prompt; it sends only the user's
-natural-language prompt and display options to the Logic App.
+Add a Compose action before the Azure OpenAI HTTP action, name it
+`RoleInformation`, and paste the contents of
+`config/prompts/rag_answer_azure.txt` into that Compose action. The Azure
+OpenAI HTTP action should set `role_information` to
+`@{outputs('RoleInformation')}`. Power BI does not send the system prompt; it
+sends only the user's natural-language prompt and display options to the Logic
+App.
 
 Set these fields:
 
@@ -174,7 +178,7 @@ Create these Power BI queries:
 | --- | --- | --- | --- |
 | `LoadConfig` | `src/powerbi/load_config.m` | No | Reads local untracked `config/powerbi.secrets.json` under the repository root. |
 | `Query` | `src/powerbi/azure_query.m` | No | Calls the Logic App and normalizes the Azure OpenAI response. |
-| `Response` | create manually | No | Calls `Query(...)` using parameters. |
+| `Response` | `src/powerbi/response_query.m` | No | Calls `Query(...)` using local config and `BasePrompt`. |
 | `Answer` | `src/powerbi/answer_query.m` | Yes | Page 1/2 answer fields. |
 | `Evidence` | `src/powerbi/evidence_query.m` | Yes | Page 2 current-response evidence fields. |
 | `Log` | `src/powerbi/log_query.m` | Yes | Page 3 interaction log plus logged evidence/citation fields. |
@@ -184,7 +188,7 @@ file contents, and rename the query to the name shown above.
 
 ### Response Query
 
-Create a blank query named `Response`:
+Create a blank query named `Response` from `src/powerbi/response_query.m`:
 
 ```powerquery
 let
@@ -192,8 +196,8 @@ let
     Source = Query(
         BasePrompt,
         Config[AzureLogicAppUrl],
-        AzureTopK,
-        AzureIncludeImages
+        5,
+        false
     )
 in
     Source
@@ -255,20 +259,35 @@ action. If `Response` works but Page 3 is empty, check the Logic App SQL
 The local FOSS API can also write to `dbo.query_log` so Page 3 can compare
 Azure and FOSS interactions in the same `Log` table.
 
-First run `scripts/sql/05_create_query_log.sql` in the target SQL database.
-Then enable logging in `config/.env`:
+First run `scripts/sql/05_create_query_log.sql` in the SQL database configured
+by `WARNY_SQL_*`. Then enable logging in `config/.env`:
 
 ```text
 WARNY_LOG_ENABLED=true
 WARNY_LOG_PIPELINE=foss_fastapi
 ```
 
-By default, FOSS logging reuses the `WARNY_SQL_*` settings. To log to Azure SQL
-while keeping local retrieval unchanged, set the `WARNY_LOG_SQL_*` overrides in
-`config/.env`.
+FOSS logging uses the same `WARNY_SQL_*` connection as the SQL ingestion step.
+Use one database that contains both `dbo.vw_rag_documents` and `dbo.query_log`.
 
 Logging is best-effort. If the insert fails, the `/query` API still returns the
 answer so local prompt testing is not blocked by logging configuration.
+
+## Prompt Files
+
+Prompt files are separated by backend because Azure and FOSS inject evidence in
+different ways:
+
+| File | Used by | Purpose |
+| --- | --- | --- |
+| `config/prompts/rag_answer_azure.txt` | Azure Logic App Compose action | Role information for Azure OpenAI with Azure AI Search evidence injection. |
+| `config/prompts/rag_answer_foss.txt` | FOSS FastAPI | Final answer prompt after local Qdrant retrieval. |
+| `config/prompts/query_intent_foss.txt` | FOSS FastAPI | Pre-retrieval make/model/year/warning-light extraction. |
+| `config/prompts/evidence_block_foss.txt` | FOSS FastAPI | Formatting local Qdrant evidence rows before sending them to Ollama. |
+
+Do not paste the FOSS `{query}` or `{evidence}` placeholders into Azure Logic
+App. Azure receives the query from the HTTP request body and evidence from Azure
+AI Search.
 
 ## PBIX Sanitation
 

@@ -151,12 +151,20 @@ The Power Query files under `src/powerbi/` are intentionally kept small:
 Power BI visuals should bind to columns from the wide answer table and the
 row-level evidence table instead of relying on many small query files.
 
-## Prompt File
+## Prompt Files
 
-`config/prompts/rag_answer.txt` is the canonical dashboard-answer prompt.
+Prompt files are separated by backend because Azure and FOSS inject evidence in
+different ways.
 
-FOSS loads that file directly. Azure should copy the same prompt text into the
-Logic App Azure OpenAI request as `role_information` or an equivalent
-system/developer instruction. `src/powerbi/azure_query.m` does not contain the
-system prompt; it calls the Logic App and normalizes the returned Azure OpenAI
-response.
+- `config/prompts/rag_answer_azure.txt`: paste into a Logic App Compose action
+  named `RoleInformation`, then reference it from Azure OpenAI
+  `role_information`.
+- `config/prompts/rag_answer_foss.txt`: FOSS final answer prompt after Qdrant
+  retrieval. Contains `{query}` and `{evidence}` placeholders.
+- `config/prompts/query_intent_foss.txt`: FOSS pre-retrieval query-intent
+  extraction prompt.
+- `config/prompts/evidence_block_foss.txt`: FOSS local evidence-row formatting
+  template.
+
+`src/powerbi/azure_query.m` does not contain the system prompt; it calls the
+Logic App and normalizes the returned Azure OpenAI response.
