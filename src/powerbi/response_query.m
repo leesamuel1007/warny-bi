@@ -3,8 +3,8 @@ let
     Source = Query(
         BasePrompt,
         Config[AzureLogicAppUrl],
-        5,
-        false
+        BaseTopK,
+        BaseIncludeImageEvidence
     )
 in
     Source
