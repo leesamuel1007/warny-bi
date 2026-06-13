@@ -134,8 +134,10 @@ The Power Query files under `src/powerbi/` are intentionally kept small:
 
 - `foss_query.m`: calls the local/FOSS FastAPI endpoint and returns the normalized response record.
 - `azure_query.m`: calls Azure OpenAI plus Azure AI Search and returns the same normalized response record.
-- `answer_function.m`: turns the normalized response into one wide, one-row answer table for dashboard cards and text visuals.
-- `evidence_function.m`: turns the normalized response into one row-per-evidence table for detail tables and evidence charts.
+- `answer_query.m`: turns the normalized response into one wide, one-row answer table for dashboard cards and text visuals.
+- `evidence_query.m`: turns the normalized response into one row-per-evidence table for detail tables and evidence charts.
+- `log_query.m`: reads Azure SQL log views for the interaction-log page.
+- `local_config.m`: reads the local, untracked Power BI configuration JSON.
 
 Power BI visuals should bind to columns from the wide answer table and the
 row-level evidence table instead of relying on many small query files.

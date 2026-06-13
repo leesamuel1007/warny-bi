@@ -6,6 +6,7 @@
 *.pem
 *secret*
 *secrets*
+!config/powerbi.secrets.example.json
 local.settings.json
 
 # Python Files
