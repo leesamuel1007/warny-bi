@@ -17,7 +17,7 @@ JSON schema:
   "severity_color": "#607D8B",
   "severity_icon_key": "info",
   "stop_immediately": false,
-  "recommended_service": "Human-readable service recommendation.",
+  "recommended_service": "Short human-readable display label for the best retrieved recommended_service_type.",
   "recall_status": "Human-readable recall status.",
   "recall_status_level": 0,
   "recall_status_color": "#607D8B",
@@ -44,6 +44,16 @@ Dashboard coding rules:
 - recall_icon_key: recall_unknown, recall_none, recall_review, or recall_candidate.
 - Use colors suitable for Power BI conditional formatting: gray #607D8B, yellow #F2C94C, orange #E67E22, red #D32F2F, blue #1976D2, green #2E7D32, purple #7B1FA2.
 - Do not output raw enum labels such as SEARCH_..., URGENT_OR_IMMEDIATE_STOP, SERVICE_SOON_TO_URGENT, AIRBAG_SRS_DIAGNOSTIC, or ENGINE_EMISSIONS_DIAGNOSTIC. Rewrite them into human-readable text.
+- The recommended_service field is a dashboard card label, not a paragraph. It must be a short noun phrase, normally 2-6 words.
+- For recommended_service, first look for a retrieved service route such as recommended_service_type, Recommended service route, Expected service type, or a service-route token in evidence.
+- If a specific service route is retrieved, use that route and humanize only the formatting:
+  - ENGINE_EMISSIONS_DIAGNOSTIC -> Engine/emissions diagnostic
+  - AIRBAG_SRS_DIAGNOSTIC -> Airbag/SRS diagnostic
+  - TIRE_PRESSURE_AND_TIRE_INSPECTION -> Tire-pressure and tire inspection
+  - BRAKE_SYSTEM_INSPECTION -> Brake-system inspection
+  - COOLING_SYSTEM_INSPECTION -> Cooling-system inspection
+- Do not replace a retrieved specific service route with vague text such as "general diagnostic inspection", "professional diagnostic inspection", or "consult a mechanic".
+- Use a generic recommended_service only when no retrieved evidence contains a service route. In that case use "Professional diagnostic inspection".
 - Use image/icon metadata only as visual support unless the user asks about an image, symbol, icon, photo, or screenshot.
 - Use document IDs exactly as shown in evidence_used.
 - evidence_used must contain only IDs that appear in retrieved evidence.

@@ -73,6 +73,62 @@ let
         in
             if List.Count(NonNullValues) = 0 then null else NonNullValues{0},
 
+    KnownServiceRoutes = {
+        "ABS_BRAKE_DIAGNOSTIC",
+        "ADAS_CAMERA_RADAR_DIAGNOSTIC",
+        "AIRBAG_SRS_DIAGNOSTIC",
+        "BATTERY_CHARGING_SYSTEM_TEST",
+        "BODY_ROOF_SPOILER_INSPECTION",
+        "BRAKE_PAD_AND_ROTOR_SERVICE",
+        "BRAKE_SYSTEM_INSPECTION",
+        "COOLING_SYSTEM_INSPECTION",
+        "CRUISE_SPEED_CONTROL_CHECK",
+        "DIESEL_STARTING_SYSTEM_DIAGNOSTIC",
+        "DOOR_LATCH_SENSOR_INSPECTION",
+        "DRIVER_INFORMATION_NO_SERVICE",
+        "ENGINE_EMISSIONS_DIAGNOSTIC",
+        "ENGINE_OIL_PRESSURE_INSPECTION",
+        "EXTERIOR_LIGHTING_CHECK_OR_REPAIR",
+        "FUEL_FILTER_SERVICE",
+        "FUEL_REFILL_OR_LEVEL_SENSOR_CHECK",
+        "HILL_DESCENT_CONTROL_DIAGNOSTIC",
+        "HOOD_LATCH_SENSOR_INSPECTION",
+        "KEY_IMMOBILIZER_DIAGNOSTIC",
+        "MULTI_POINT_WARNING_DIAGNOSTIC",
+        "PARKING_ASSIST_SENSOR_CHECK",
+        "RAIN_SENSOR_WIPER_SYSTEM_CHECK",
+        "SCHEDULED_MAINTENANCE",
+        "SEAT_BELT_SENSOR_INSPECTION",
+        "STABILITY_CONTROL_DIAGNOSTIC",
+        "STEERING_SYSTEM_DIAGNOSTIC",
+        "SUSPENSION_SYSTEM_DIAGNOSTIC",
+        "TIRE_PRESSURE_AND_TIRE_INSPECTION",
+        "TRAILER_TOW_HITCH_INSPECTION",
+        "TRANSMISSION_POWERTRAIN_DIAGNOSTIC",
+        "TRUNK_LATCH_SENSOR_INSPECTION",
+        "TURN_SIGNAL_LIGHTING_CHECK",
+        "WASHER_FLUID_REFILL_OR_LEAK_CHECK"
+    },
+
+    HumanizeServiceText = (value as nullable text) as nullable text =>
+        if value = null then
+            null
+        else if value = "ENGINE_EMISSIONS_DIAGNOSTIC" then
+            "Engine/emissions diagnostic"
+        else if value = "AIRBAG_SRS_DIAGNOSTIC" then
+            "Airbag/SRS diagnostic"
+        else if value = "TIRE_PRESSURE_AND_TIRE_INSPECTION" then
+            "Tire-pressure and tire inspection"
+        else
+            Text.Proper(Text.Replace(Text.Replace(Text.Lower(value), "_", " "), "-", " ")),
+
+    ServiceRouteFromContent = (content as nullable text) as nullable text =>
+        let
+            ContentText = if content = null then "" else content,
+            Matches = List.Select(KnownServiceRoutes, each Text.Contains(ContentText, _, Comparer.OrdinalIgnoreCase))
+        in
+            if List.Count(Matches) = 0 then null else Matches{0},
+
     SourceTypeFromDocument = (documentId as nullable text) as text =>
         if documentId <> null and Text.StartsWith(documentId, "recall:") then
             "NHTSA_RECALLS_API"
@@ -120,7 +176,8 @@ let
                 "azure-citation-" & Text.From(index + 1)
             }),
             SourceType = SourceTypeFromDocument(DocumentId),
-            EvidenceLevel = EvidenceLevelFromDocument(DocumentId)
+            EvidenceLevel = EvidenceLevelFromDocument(DocumentId),
+            ServiceRoute = ServiceRouteFromContent(Content)
         in
             [
                 score = null,
@@ -143,8 +200,8 @@ let
                 component_category = FieldOrNull(Parsed, "component_category"),
                 severity = FieldOrNull(answer, "severity_label"),
                 severity_label = FieldOrNull(answer, "severity_label"),
-                recommended_service_type = FieldOrNull(answer, "recommended_service"),
-                recommended_service_label = FieldOrNull(answer, "recommended_service"),
+                recommended_service_type = ServiceRoute,
+                recommended_service_label = HumanizeServiceText(ServiceRoute),
                 source_url = TextOrNull(FieldOrNull(citation, "url")),
                 image_path = null,
                 review_status = null,

@@ -162,7 +162,7 @@ SELECT
     COALESCE(
         NULLIF(citation_fields.recommended_service, N''),
         NULLIF(citation_fields.recommended_service_type, N''),
-        parsed.recommended_service
+        citation_service.service_route
     ) AS evidence_recommended_service,
     COALESCE(
         NULLIF(citation_fields.campaign_id, N''),
@@ -250,6 +250,48 @@ WITH (
     url NVARCHAR(1000) N'$.url',
     source_url NVARCHAR(1000) N'$.source_url'
 ) AS citation_fields
+OUTER APPLY (
+    SELECT TOP (1)
+        service_routes.service_route
+    FROM (
+        VALUES
+            (N'ABS_BRAKE_DIAGNOSTIC'),
+            (N'ADAS_CAMERA_RADAR_DIAGNOSTIC'),
+            (N'AIRBAG_SRS_DIAGNOSTIC'),
+            (N'BATTERY_CHARGING_SYSTEM_TEST'),
+            (N'BODY_ROOF_SPOILER_INSPECTION'),
+            (N'BRAKE_PAD_AND_ROTOR_SERVICE'),
+            (N'BRAKE_SYSTEM_INSPECTION'),
+            (N'COOLING_SYSTEM_INSPECTION'),
+            (N'CRUISE_SPEED_CONTROL_CHECK'),
+            (N'DIESEL_STARTING_SYSTEM_DIAGNOSTIC'),
+            (N'DOOR_LATCH_SENSOR_INSPECTION'),
+            (N'DRIVER_INFORMATION_NO_SERVICE'),
+            (N'ENGINE_EMISSIONS_DIAGNOSTIC'),
+            (N'ENGINE_OIL_PRESSURE_INSPECTION'),
+            (N'EXTERIOR_LIGHTING_CHECK_OR_REPAIR'),
+            (N'FUEL_FILTER_SERVICE'),
+            (N'FUEL_REFILL_OR_LEVEL_SENSOR_CHECK'),
+            (N'HILL_DESCENT_CONTROL_DIAGNOSTIC'),
+            (N'HOOD_LATCH_SENSOR_INSPECTION'),
+            (N'KEY_IMMOBILIZER_DIAGNOSTIC'),
+            (N'MULTI_POINT_WARNING_DIAGNOSTIC'),
+            (N'PARKING_ASSIST_SENSOR_CHECK'),
+            (N'RAIN_SENSOR_WIPER_SYSTEM_CHECK'),
+            (N'SCHEDULED_MAINTENANCE'),
+            (N'SEAT_BELT_SENSOR_INSPECTION'),
+            (N'STABILITY_CONTROL_DIAGNOSTIC'),
+            (N'STEERING_SYSTEM_DIAGNOSTIC'),
+            (N'SUSPENSION_SYSTEM_DIAGNOSTIC'),
+            (N'TIRE_PRESSURE_AND_TIRE_INSPECTION'),
+            (N'TRAILER_TOW_HITCH_INSPECTION'),
+            (N'TRANSMISSION_POWERTRAIN_DIAGNOSTIC'),
+            (N'TRUNK_LATCH_SENSOR_INSPECTION'),
+            (N'TURN_SIGNAL_LIGHTING_CHECK'),
+            (N'WASHER_FLUID_REFILL_OR_LEAK_CHECK')
+    ) AS service_routes(service_route)
+    WHERE citation_fields.content LIKE N'%' + service_routes.service_route + N'%'
+) AS citation_service
 OUTER APPLY (
     SELECT
         CASE
