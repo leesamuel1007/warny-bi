@@ -8,6 +8,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from rag_service.ag import RagAnswerService
+from rag_service.query_log import NullQueryLogger, QueryLogger
 
 
 class QueryRequest(BaseModel):
@@ -102,8 +103,9 @@ class HealthResponse(BaseModel):
 class WarnyBiApi:
     """Owns FastAPI app construction and route registration."""
 
-    def __init__(self, answer_service: RagAnswerService) -> None:
+    def __init__(self, answer_service: RagAnswerService, query_logger: QueryLogger | None = None) -> None:
         self.answer_service = answer_service
+        self.query_logger = query_logger or NullQueryLogger()
         self.app = FastAPI(title="WARNY-BI RAG API", version="0.1.0")
         self.register_routes()
 
@@ -125,6 +127,10 @@ class WarnyBiApi:
             raise HTTPException(status_code=400, detail=str(error)) from error
         except Exception as error:
             raise HTTPException(status_code=500, detail=str(error)) from error
+        try:
+            self.query_logger.log(result)
+        except Exception:
+            pass
         return QueryResponse(
             query=result.query,
             answer=AnswerResponse(**result.answer.to_dict()),

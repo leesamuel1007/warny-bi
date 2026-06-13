@@ -27,7 +27,9 @@ from rag_service.ag import (
 )
 from rag_service.app import WarnyBiApi
 from rag_service.config import AnswerConfig, OllamaConfig, PromptTemplateConfig, QdrantConfig
+from rag_service.config import QueryLogConfig, SqlConfig
 from rag_service.embeddings import OllamaEmbeddingClient
+from rag_service.query_log import NullQueryLogger, QueryLogger, SqlQueryLogger
 from rag_service.retrieval import QueryTermExtractor, SearchResultReranker
 from rag_service.vector_store import QdrantVectorStore
 
@@ -65,6 +67,14 @@ class RagApiCli:
             default=int(os.getenv("WARNY_CANDIDATE_MULTIPLIER", "4")),
         )
         parser.add_argument("--max-candidates", type=int, default=int(os.getenv("WARNY_MAX_CANDIDATES", "30")))
+        parser.add_argument("--log-enabled", action="store_true", default=self.bool_from_env("WARNY_LOG_ENABLED", False))
+        parser.add_argument("--log-pipeline", default=os.getenv("WARNY_LOG_PIPELINE", "foss_fastapi"))
+        parser.add_argument("--log-sql-driver", default=os.getenv("WARNY_LOG_SQL_DRIVER", os.getenv("WARNY_SQL_DRIVER", "ODBC Driver 18 for SQL Server")))
+        parser.add_argument("--log-sql-server", default=os.getenv("WARNY_LOG_SQL_SERVER", os.getenv("WARNY_SQL_SERVER", "127.0.0.1,1433")))
+        parser.add_argument("--log-sql-database", default=os.getenv("WARNY_LOG_SQL_DATABASE", os.getenv("WARNY_SQL_DATABASE", "warny_bi")))
+        parser.add_argument("--log-sql-user", default=os.getenv("WARNY_LOG_SQL_USER", os.getenv("WARNY_SQL_USER")))
+        parser.add_argument("--log-sql-password", default=os.getenv("WARNY_LOG_SQL_PASSWORD", os.getenv("WARNY_SQL_PASSWORD")))
+        parser.add_argument("--log-sql-connection-string", default=os.getenv("WARNY_LOG_SQL_CONNECTION_STRING"))
         parser.add_argument(
             "--answer-prompt-path",
             type=Path,
@@ -81,6 +91,12 @@ class RagApiCli:
             default=self.path_from_env("WARNY_INTENT_PROMPT_PATH", self.DEFAULT_INTENT_PROMPT_PATH),
         )
         return parser.parse_args()
+
+    def bool_from_env(self, name: str, default: bool) -> bool:
+        value = os.getenv(name)
+        if value is None:
+            return default
+        return value.strip().lower() in {"1", "true", "yes", "on"}
 
     def path_from_env(self, name: str, default_path: Path) -> Path:
         value = os.getenv(name)
@@ -137,7 +153,24 @@ class RagApiCli:
             prompt_builder=prompt_builder,
             chat_client=chat_client,
         )
-        return WarnyBiApi(answer_service)
+        return WarnyBiApi(answer_service, self.create_query_logger(args))
+
+    def create_query_logger(self, args: argparse.Namespace) -> QueryLogger:
+        log_config = QueryLogConfig(
+            enabled=args.log_enabled,
+            pipeline=args.log_pipeline,
+        )
+        if not log_config.enabled:
+            return NullQueryLogger()
+        sql_config = SqlConfig(
+            driver=args.log_sql_driver,
+            server=args.log_sql_server,
+            database=args.log_sql_database,
+            user=args.log_sql_user,
+            password=args.log_sql_password,
+            connection_string_override=args.log_sql_connection_string,
+        )
+        return SqlQueryLogger.from_sql_config(log_config, sql_config)
 
 
 if __name__ == "__main__":

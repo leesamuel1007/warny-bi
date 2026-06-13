@@ -61,11 +61,10 @@ prompt to the Logic App. The Logic App calls Azure OpenAI, lets Azure OpenAI use
 Azure AI Search as the retrieval source, writes one interaction-log row to Azure
 SQL, and returns the Azure OpenAI response to Power BI.
 
-Page 3 reads the SQL log views:
+Page 3 reads the SQL log view:
 
 ```text
-dbo.vw_query_log_dashboard
-dbo.vw_query_log_evidence
+dbo.vw_query_log
 ```
 
 ## Azure + Power BI Desktop Setup
@@ -90,8 +89,7 @@ scripts/sql/05_create_query_log.sql
 This creates:
 
 - `dbo.query_log`
-- `dbo.vw_query_log_dashboard`
-- `dbo.vw_query_log_evidence`
+- `dbo.vw_query_log`
 
 There is no `06` logger script. Logging is done by the Logic App inserting one
 row directly into `dbo.query_log`.
@@ -100,6 +98,11 @@ row directly into `dbo.query_log`.
 
 In the Logic App, after the Azure OpenAI HTTP action succeeds, add an Azure SQL
 **Insert row** action for table `dbo.query_log`.
+
+The Azure OpenAI HTTP action should use the dashboard prompt in
+`config/prompts/rag_answer.txt` as its `role_information` or system/developer
+instruction. Power BI does not send the system prompt; it sends only the user's
+natural-language prompt and display options to the Logic App.
 
 Set these fields:
 
@@ -169,14 +172,12 @@ Create these Power BI queries:
 
 | Query name | Source file | Enable load? | Purpose |
 | --- | --- | --- | --- |
-| `LocalConfig` | `src/powerbi/local_config.m` | No | Reads local untracked `config/powerbi.secrets.json` under the repository root. |
+| `LoadConfig` | `src/powerbi/load_config.m` | No | Reads local untracked `config/powerbi.secrets.json` under the repository root. |
 | `Query` | `src/powerbi/azure_query.m` | No | Calls the Logic App and normalizes the Azure OpenAI response. |
-| `LogQuery` | `src/powerbi/log_query.m` | No | Reads Azure SQL log views for Page 3. |
 | `Response` | create manually | No | Calls `Query(...)` using parameters. |
 | `Answer` | `src/powerbi/answer_query.m` | Yes | Page 1/2 answer fields. |
 | `Evidence` | `src/powerbi/evidence_query.m` | Yes | Page 2 current-response evidence fields. |
-| `QueryLog` | create manually | Yes | Page 3 interaction-log table. |
-| `QueryLogEvidence` | create manually | Yes | Page 3 logged citation/evidence table. |
+| `Log` | `src/powerbi/log_query.m` | Yes | Page 3 interaction log plus logged evidence/citation fields. |
 
 For each source file, create a blank query, open **Advanced Editor**, paste the
 file contents, and rename the query to the name shown above.
@@ -187,7 +188,7 @@ Create a blank query named `Response`:
 
 ```powerquery
 let
-    Config = LocalConfig(PowerBIProjectRoot),
+    Config = LoadConfig(PowerBIProjectRoot),
     Source = Query(
         BasePrompt,
         Config[AzureLogicAppUrl],
@@ -205,36 +206,30 @@ Disable **Enable load** for `Response`.
 Create `Answer` from `src/powerbi/answer_query.m` and `Evidence` from
 `src/powerbi/evidence_query.m`. Enable load for both.
 
+`Answer` includes visual-control fields for cards and icon visuals:
+
+- `severity_color`
+- `severity_icon_key`
+- `severity_icon_label`
+- `recall_status_color`
+- `recall_icon_key`
+- `recall_icon_label`
+
 ### Page 3 Log Tables
 
-Create `QueryLog`:
+Create `Log` from `src/powerbi/log_query.m` and enable load. It reads
+`dbo.vw_query_log`, which already contains dashboard-level query fields plus
+prefixed evidence fields such as `evidence_document_id`,
+`evidence_campaign_id`, and `evidence_content_preview`.
 
-```powerquery
-let
-    Config = LocalConfig(PowerBIProjectRoot),
-    Source = LogQuery(Config[AzureSqlServer], Config[AzureSqlDatabase], "vw_query_log_dashboard", "dbo")
-in
-    Source
-```
+The `Log` table is pipeline-neutral. Azure rows use `pipeline =
+azure_logic_app`; the FOSS backend should write the same `dbo.query_log` shape
+with a different `pipeline` value when local logging is enabled.
 
-Create `QueryLogEvidence`:
-
-```powerquery
-let
-    Config = LocalConfig(PowerBIProjectRoot),
-    Source = LogQuery(Config[AzureSqlServer], Config[AzureSqlDatabase], "vw_query_log_evidence", "dbo")
-in
-    Source
-```
-
-Enable load for both.
-
-Use `QueryLog` for Page 3 visuals such as query volume, frequent makes/models,
-frequent warning lights, severity distribution, recall status distribution, and
-high-impact query counts.
-
-Use `QueryLogEvidence` for citation/evidence detail visuals such as evidence
-count, citation preview, source URL, campaign ID, and warning-light ID.
+Use `Log` for Page 3 visuals such as query volume, frequent makes/models,
+frequent warning lights, severity distribution, recall status distribution,
+high-impact query counts, evidence count, citation preview, source URL,
+campaign ID, and warning-light ID.
 
 ## First Azure Test
 
@@ -249,12 +244,71 @@ Then refresh previews in this order:
 1. `Response`: should show a record with `query`, `answer`, `evidence`, and `raw`.
 2. `Answer`: should show one row with summary, severity, recall, and parsed vehicle fields.
 3. `Evidence`: should show retrieved evidence/citation rows.
-4. `QueryLog`: should show a new logged interaction after the Logic App insert succeeds.
-5. `QueryLogEvidence`: should show citation rows expanded from `citations_json`.
+4. `Log`: should show a new logged interaction after the Logic App insert succeeds, with evidence rows expanded into prefixed evidence columns.
 
 If `Response` fails, check the Logic App trigger URL and the Azure OpenAI HTTP
 action. If `Response` works but Page 3 is empty, check the Logic App SQL
 **Insert row** action and confirm that `dbo.query_log` has new rows in DBeaver.
+
+## Optional FOSS Logging
+
+The local FOSS API can also write to `dbo.query_log` so Page 3 can compare
+Azure and FOSS interactions in the same `Log` table.
+
+First run `scripts/sql/05_create_query_log.sql` in the target SQL database.
+Then enable logging in `config/.env`:
+
+```text
+WARNY_LOG_ENABLED=true
+WARNY_LOG_PIPELINE=foss_fastapi
+```
+
+By default, FOSS logging reuses the `WARNY_SQL_*` settings. To log to Azure SQL
+while keeping local retrieval unchanged, set the `WARNY_LOG_SQL_*` overrides in
+`config/.env`.
+
+Logging is best-effort. If the insert fails, the `/query` API still returns the
+answer so local prompt testing is not blocked by logging configuration.
+
+## PBIX Sanitation
+
+PBIX files are intended to be committed, but they must not contain real Logic
+App URLs, `sig=` tokens, Azure keys, SQL passwords, or SAS URLs. Store those in
+ignored local files such as `config/powerbi.secrets.json`.
+
+Before committing a PBIX:
+
+1. Open it in Power BI Desktop.
+2. Remove any parameter that stores a real secret.
+3. Keep only safe parameters such as `BasePrompt`, `PowerBIProjectRoot`,
+   `AzureTopK`, `AzureIncludeImages`, `BaseTopK`, `BaseIncludeImages`, and a
+   non-secret local `ApiBaseUrl` if needed for FOSS testing.
+4. Make the report use `LoadConfig(PowerBIProjectRoot)` for Azure secrets.
+5. Save the PBIX.
+6. Audit the saved file from a shell before committing:
+
+```bash
+rm -rf /tmp/warny_pbix_audit
+mkdir -p /tmp/warny_pbix_audit/azure /tmp/warny_pbix_audit/foss
+unzip -q src/powerbi/warny-bi-azure.pbix -d /tmp/warny_pbix_audit/azure
+unzip -q src/powerbi/warny-bi-foss.pbix -d /tmp/warny_pbix_audit/foss
+rg -a -i "sig=|logic.azure|openai.azure|search.windows.net|database.windows.net|password|secret|apikey|api.key|sharedaccess|accountkey|client_secret|https://" /tmp/warny_pbix_audit src/powerbi/*.pbix
+```
+
+If a secret may have been committed in PBIX history, rotate that secret first.
+Then rewrite history only after saving clean PBIX copies outside the repo:
+
+```bash
+mkdir -p /tmp/warny-bi-sanitized-pbix
+cp src/powerbi/*.pbix /tmp/warny-bi-sanitized-pbix/
+git filter-repo --path-glob '*.pbix' --invert-paths
+cp /tmp/warny-bi-sanitized-pbix/*.pbix src/powerbi/
+git add .
+git commit -m "Add sanitized Power BI reports"
+git push --force-with-lease origin main
+```
+
+Everyone else should reclone after the force push.
 
 ## Free Prompt Testing
 

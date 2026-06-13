@@ -3,7 +3,8 @@ let
         "user_prompt", "answer_summary", "severity", "severity_level",
         "severity_color", "severity_icon_key", "stop_immediately",
         "recommended_service", "recall_status", "recall_status_level",
-        "recall_status_color", "recall_icon_key", "possible_causes",
+        "recall_status_color", "recall_icon_key", "severity_icon_label",
+        "recall_icon_label", "possible_causes",
         "immediate_action", "primary_campaign", "recall_interpretation",
         "evidence_used", "parsed_make", "parsed_model", "parsed_model_year",
         "parsed_warning_light", "warning_light_id", "component_category",
@@ -24,6 +25,30 @@ let
             ""
         else
             Text.From(value),
+
+    IconLabel = (value as any) as nullable text =>
+        let
+            TextValue = TextFromNullable(value),
+            Key = if TextValue = null then "" else Text.Lower(TextValue)
+        in
+            if Key = "info" then
+                "Information"
+            else if Key = "service_soon" then
+                "Service soon"
+            else if Key = "warning" then
+                "Warning"
+            else if Key = "stop" then
+                "Stop"
+            else if Key = "recall_unknown" then
+                "Recall unknown"
+            else if Key = "recall_none" then
+                "No recall found"
+            else if Key = "recall_review" then
+                "Recall review needed"
+            else if Key = "recall_candidate" then
+                "Candidate recall match"
+            else
+                TextFromNullable(value),
 
     CountEvidenceLevel = (evidence as list, level as text) as number =>
         List.Count(
@@ -57,19 +82,23 @@ let
     Parsed = FieldOrNull(Answer, "parsed"),
     Evidence = try Response[evidence] otherwise {},
     EvidenceList = if Evidence is list then Evidence else {},
+    SeverityIconKey = TextFromNullable(FieldOrNull(Answer, "severity_icon_key")),
+    RecallIconKey = TextFromNullable(FieldOrNull(Answer, "recall_icon_key")),
     Row = [
         user_prompt = TextFromNullable(try Response[query] otherwise null),
         answer_summary = TextFromNullable(FieldOrNull(Answer, "summary")),
         severity = TextFromNullable(FieldOrNull(Answer, "severity_label")),
         severity_level = FieldOrNull(Answer, "severity_level"),
         severity_color = TextFromNullable(FieldOrNull(Answer, "severity_color")),
-        severity_icon_key = TextFromNullable(FieldOrNull(Answer, "severity_icon_key")),
+        severity_icon_key = SeverityIconKey,
         stop_immediately = FieldOrNull(Answer, "stop_immediately"),
         recommended_service = TextFromNullable(FieldOrNull(Answer, "recommended_service")),
         recall_status = TextFromNullable(FieldOrNull(Answer, "recall_status")),
         recall_status_level = FieldOrNull(Answer, "recall_status_level"),
         recall_status_color = TextFromNullable(FieldOrNull(Answer, "recall_status_color")),
-        recall_icon_key = TextFromNullable(FieldOrNull(Answer, "recall_icon_key")),
+        recall_icon_key = RecallIconKey,
+        severity_icon_label = IconLabel(SeverityIconKey),
+        recall_icon_label = IconLabel(RecallIconKey),
         possible_causes = TextList(FieldOrNull(Answer, "possible_causes")),
         immediate_action = TextFromNullable(FieldOrNull(Answer, "immediate_action")),
         primary_campaign = TextFromNullable(FirstNonNull({FieldOrNull(Answer, "primary_campaign"), FirstRecallCampaign(EvidenceList)})),

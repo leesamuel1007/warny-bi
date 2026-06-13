@@ -103,6 +103,15 @@ pipeline or the Azure OpenAI plus Azure AI Search pipeline:
 exist so cards, icons, colors, and parsed vehicle visuals can be built without
 manual text parsing in Power BI.
 
+Power BI icon visuals should use the stable keys:
+
+- `severity_icon_key`: `info`, `service_soon`, `warning`, or `stop`
+- `recall_icon_key`: `recall_unknown`, `recall_none`, `recall_review`, or
+  `recall_candidate`
+
+`answer_query.m` also exposes `severity_icon_label` and `recall_icon_label` for
+text labels or tooltips next to icon visuals.
+
 Each evidence row should use stable display fields:
 
 - `Query_ID`
@@ -136,17 +145,18 @@ The Power Query files under `src/powerbi/` are intentionally kept small:
 - `azure_query.m`: calls Azure OpenAI plus Azure AI Search and returns the same normalized response record.
 - `answer_query.m`: turns the normalized response into one wide, one-row answer table for dashboard cards and text visuals.
 - `evidence_query.m`: turns the normalized response into one row-per-evidence table for detail tables and evidence charts.
-- `log_query.m`: reads Azure SQL log views for the interaction-log page.
-- `local_config.m`: reads the local, untracked Power BI configuration JSON.
+- `log_query.m`: reads `dbo.vw_query_log` into one Page 3 table.
+- `load_config.m`: reads the local, untracked Power BI configuration JSON.
 
 Power BI visuals should bind to columns from the wide answer table and the
 row-level evidence table instead of relying on many small query files.
 
 ## Prompt File
 
-Both FOSS and Azure answer generation use `config/prompts/rag_answer.txt` as the
-canonical dashboard-answer prompt.
+`config/prompts/rag_answer.txt` is the canonical dashboard-answer prompt.
 
-FOSS loads that file directly. `src/powerbi/azure_query.m` contains a
-fallback copy of the same instructions because a published Power BI report
-cannot reliably load a repository-relative text file at refresh time.
+FOSS loads that file directly. Azure should copy the same prompt text into the
+Logic App Azure OpenAI request as `role_information` or an equivalent
+system/developer instruction. `src/powerbi/azure_query.m` does not contain the
+system prompt; it calls the Logic App and normalizes the returned Azure OpenAI
+response.

@@ -1,5 +1,5 @@
 let
-    LocalConfig = (
+    LoadConfig = (
         projectRoot as text,
         optional relativeSecretsPath as nullable text
     ) as record =>
@@ -47,4 +47,4 @@ let
             else
                 Source
 in
-    LocalConfig
+    LoadConfig

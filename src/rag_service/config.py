@@ -117,3 +117,11 @@ class ApiConfig:
 
     host: str
     port: int
+
+
+@dataclass(frozen=True)
+class QueryLogConfig:
+    """Optional query logging settings for local/FOSS API runs."""
+
+    enabled: bool
+    pipeline: str = "foss_fastapi"
