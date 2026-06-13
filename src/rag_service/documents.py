@@ -629,6 +629,8 @@ class RagAnswer:
     """Answer and evidence returned by the RAG service."""
 
     query: str
+    top_k: int
+    include_image_evidence: bool
     answer: DashboardAnswer
     evidence: tuple[SearchResult, ...]
     parsed_intent: QueryIntentResult
@@ -636,6 +638,8 @@ class RagAnswer:
     def to_dict(self) -> dict[str, Any]:
         return {
             "query": self.query,
+            "top_k": self.top_k,
+            "include_image_evidence": self.include_image_evidence,
             "answer": self.answer.to_dict(),
             "evidence": [result.to_dict() for result in self.evidence],
         }

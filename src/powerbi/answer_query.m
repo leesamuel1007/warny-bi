@@ -1,10 +1,10 @@
 let
     AnswerColumns = {
-        "user_prompt", "answer_summary", "severity", "severity_level",
-        "severity_color", "severity_icon_key", "stop_immediately",
-        "recommended_service", "recall_status", "recall_status_level",
-        "recall_status_color", "recall_icon_key", "severity_icon_label",
-        "recall_icon_label", "possible_causes",
+        "user_prompt", "top_k", "include_image_evidence", "answer_summary",
+        "severity", "severity_level", "severity_color", "severity_icon_key",
+        "stop_immediately", "recommended_service", "recall_status",
+        "recall_status_level", "recall_status_color", "recall_icon_key",
+        "severity_icon_label", "recall_icon_label", "possible_causes",
         "immediate_action", "primary_campaign", "recall_interpretation",
         "evidence_used", "parsed_make", "parsed_model", "parsed_model_year",
         "parsed_warning_light", "warning_light_id", "component_category",
@@ -86,6 +86,8 @@ let
     RecallIconKey = TextFromNullable(FieldOrNull(Answer, "recall_icon_key")),
     Row = [
         user_prompt = TextFromNullable(try Response[query] otherwise null),
+        top_k = try Response[top_k] otherwise null,
+        include_image_evidence = try Response[include_image_evidence] otherwise null,
         answer_summary = TextFromNullable(FieldOrNull(Answer, "summary")),
         severity = TextFromNullable(FieldOrNull(Answer, "severity_label")),
         severity_level = FieldOrNull(Answer, "severity_level"),

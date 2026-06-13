@@ -172,6 +172,8 @@ let
     ) as record =>
         let
             Prompt = Text.Trim(query),
+            RequestTopK = if topK = null then 5 else Int64.From(topK),
+            RequestIncludeImageEvidence = if includeImageEvidence = null then false else includeImageEvidence,
             RawResponse =
                 if Prompt = "" then
                     null
@@ -181,7 +183,7 @@ let
                             Text.Trim(logicAppUrl),
                             [
                                 Headers = [#"Content-Type" = "application/json"],
-                                Content = Json.FromValue(BuildPayload(Prompt, topK, includeImageEvidence))
+                                Content = Json.FromValue(BuildPayload(Prompt, RequestTopK, RequestIncludeImageEvidence))
                             ]
                         )
                     ),
@@ -199,6 +201,8 @@ let
         in
             [
                 query = Prompt,
+                top_k = RequestTopK,
+                include_image_evidence = RequestIncludeImageEvidence,
                 answer = Answer,
                 evidence = Evidence,
                 raw = RawResponse

@@ -35,6 +35,8 @@ class QueryLogPayload:
     created_at_utc: datetime
     pipeline: str
     user_prompt: str
+    top_k: int
+    include_image_evidence: bool
     answer_json: str
     citations_json: str
     upstream_response_json: str
@@ -48,6 +50,8 @@ class QueryLogPayloadBuilder:
         evidence = [self.evidence_payload(evidence_item) for evidence_item in result.evidence]
         response = {
             "query": result.query,
+            "top_k": result.top_k,
+            "include_image_evidence": result.include_image_evidence,
             "answer": answer,
             "evidence": evidence,
             "parsed_intent": result.parsed_intent.to_dict(),
@@ -57,6 +61,8 @@ class QueryLogPayloadBuilder:
             created_at_utc=datetime.now(timezone.utc).replace(tzinfo=None),
             pipeline=pipeline,
             user_prompt=result.query,
+            top_k=result.top_k,
+            include_image_evidence=result.include_image_evidence,
             answer_json=self.dumps(answer),
             citations_json=self.dumps(evidence),
             upstream_response_json=self.dumps(response),
@@ -101,16 +107,20 @@ class SqlQueryLogger(QueryLogger):
                     created_at_utc,
                     pipeline,
                     user_prompt,
+                    top_k,
+                    include_image_evidence,
                     answer_json,
                     citations_json,
                     azure_response_json
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 payload.query_id,
                 payload.created_at_utc,
                 payload.pipeline,
                 payload.user_prompt,
+                payload.top_k,
+                payload.include_image_evidence,
                 payload.answer_json,
                 payload.citations_json,
                 payload.upstream_response_json,

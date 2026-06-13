@@ -89,6 +89,8 @@ class QueryResponse(BaseModel):
     """Response body for text RAG queries."""
 
     query: str
+    top_k: int
+    include_image_evidence: bool
     answer: AnswerResponse
     evidence: list[EvidenceResponse]
 
@@ -133,6 +135,8 @@ class WarnyBiApi:
             pass
         return QueryResponse(
             query=result.query,
+            top_k=result.top_k,
+            include_image_evidence=result.include_image_evidence,
             answer=AnswerResponse(**result.answer.to_dict()),
             evidence=[
                 EvidenceResponse(**self.evidence_payload(evidence))

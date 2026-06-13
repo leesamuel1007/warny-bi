@@ -14,6 +14,8 @@ same fields from the FastAPI backend when local logging is enabled.
   created_at_utc      = utcNow()
   pipeline            = azure_logic_app or foss_fastapi
   user_prompt         = original natural-language prompt
+  top_k               = requested number of retrieved evidence rows
+  include_image_evidence = whether image evidence was requested
   answer_json         = structured dashboard answer JSON
   citations_json      = evidence/citations as JSON text
   azure_response_json = full upstream response JSON when available
@@ -45,6 +47,8 @@ CREATE TABLE dbo.query_log (
     created_at_utc DATETIME2(3) NOT NULL,
     pipeline NVARCHAR(30) NOT NULL,
     user_prompt NVARCHAR(MAX) NOT NULL,
+    top_k INT NULL,
+    include_image_evidence BIT NULL,
     answer_json NVARCHAR(MAX) NULL,
     citations_json NVARCHAR(MAX) NULL,
     azure_response_json NVARCHAR(MAX) NULL,
@@ -69,6 +73,8 @@ SELECT
     CAST(q.created_at_utc AS DATE) AS created_date_utc,
     q.pipeline,
     q.user_prompt,
+    q.top_k,
+    q.include_image_evidence,
     parsed.answer_summary,
     parsed.parsed_make,
     parsed.parsed_model,

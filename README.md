@@ -112,15 +112,17 @@ Set these fields:
 
 | SQL column | Logic App value |
 | --- | --- |
+| `query_id` | `guid()` |
+| `created_at_utc` | `utcNow()` |
 | `pipeline` | `azure_logic_app` |
 | `user_prompt` | `triggerBody()?['query']` |
+| `top_k` | `triggerBody()?['top_k']` |
+| `include_image_evidence` | `triggerBody()?['include_image_evidence']` |
 | `answer_json` | `body('<Azure OpenAI action>')?['choices'][0]['message']['content']` |
 | `citations_json` | `string(body('<Azure OpenAI action>')?['choices'][0]['message']['context']['citations'])` |
 | `azure_response_json` | `string(body('<Azure OpenAI action>'))` |
 
 Replace `<Azure OpenAI action>` with the actual action name in your Logic App.
-Leave `query_id` and `created_at_utc` blank so Azure SQL uses the table
-defaults.
 
 The Logic App's final HTTP response should return the Azure OpenAI HTTP action
 body. Power Query expects that raw Azure OpenAI response shape.

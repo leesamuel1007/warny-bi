@@ -234,4 +234,11 @@ class RagAnswerService:
         prompt = self.prompt_builder.build(context.search_text(), evidence)
         answer_text = self.chat_client.complete(prompt)
         answer = self.answer_parser.parse(answer_text, clean_query, parsed_intent, evidence)
-        return RagAnswer(query=clean_query, answer=answer, evidence=evidence, parsed_intent=parsed_intent)
+        return RagAnswer(
+            query=clean_query,
+            top_k=limit,
+            include_image_evidence=include_image_evidence,
+            answer=answer,
+            evidence=evidence,
+            parsed_intent=parsed_intent,
+        )

@@ -52,11 +52,15 @@ let
     ) as record =>
         let
             Prompt = Text.Trim(query),
+            RequestTopK = if topK = null then 5 else Int64.From(topK),
+            RequestIncludeImageEvidence = if includeImageEvidence = null then false else includeImageEvidence,
             BaseUrl = if apiBaseUrl = null then "http://localhost:18080" else apiBaseUrl,
             Response =
                 if Prompt = "" then
                     [
                         query = "",
+                        top_k = RequestTopK,
+                        include_image_evidence = RequestIncludeImageEvidence,
                         answer = EmptyAnswer,
                         evidence = {},
                         raw = null
@@ -68,13 +72,15 @@ let
                             [
                                 RelativePath = "query",
                                 Headers = [#"Content-Type" = "application/json"],
-                                Content = Json.FromValue(BuildPayload(Prompt, topK, includeImageEvidence))
+                                Content = Json.FromValue(BuildPayload(Prompt, RequestTopK, RequestIncludeImageEvidence))
                             ]
                         )
                     )
         in
             [
                 query = try Response[query] otherwise Prompt,
+                top_k = try Response[top_k] otherwise RequestTopK,
+                include_image_evidence = try Response[include_image_evidence] otherwise RequestIncludeImageEvidence,
                 answer = try Response[answer] otherwise EmptyAnswer,
                 evidence = try Response[evidence] otherwise {},
                 raw = Response
