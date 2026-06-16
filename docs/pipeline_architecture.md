@@ -43,8 +43,8 @@ processed CSVs
 ```
 
 The FOSS backend is the free local test path. It uses the same SQL retrieval
-view and the same Power BI response shape as Azure. When logging is enabled, it
-writes rows to the same `dbo.query_log` table with `pipeline = foss_fastapi`.
+view and the same Power BI response shape as Azure. Successful queries write
+rows to the same `dbo.query_log` table with `pipeline = foss_fastapi`.
 
 ## Shared SQL Contract
 
