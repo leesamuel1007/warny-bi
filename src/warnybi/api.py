@@ -7,18 +7,12 @@ import time
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
 
 from warnybi.config import RuntimeSettings
+from warnybi.models import QueryRequest
 
 
 LOGGER = logging.getLogger(__name__)
-
-
-class QueryRequest(BaseModel):
-    query: str = Field(min_length=1)
-    top_k: int | None = Field(default=None, ge=1, le=20)
-    include_image_evidence: bool = False
 
 
 class ApiServer:

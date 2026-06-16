@@ -2,10 +2,10 @@
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-QDRANT_URL="${QDRANT_URL:-http://127.0.0.1:16333}"
+OPENSEARCH_URL="${OPENSEARCH_URL:-http://127.0.0.1:9200}"
 OLLAMA_URL="${OLLAMA_URL:-http://127.0.0.1:11434}"
 SQL_CONTAINER="${SQL_CONTAINER:-mssql2025}"
-QDRANT_CONTAINER="${QDRANT_CONTAINER:-warny-qdrant}"
+OPENSEARCH_CONTAINER="${OPENSEARCH_CONTAINER:-warny-opensearch}"
 INGEST=0
 RECREATE=0
 LOAD_DB=0
@@ -14,7 +14,7 @@ usage() {
   printf '%s\n' "Usage: scripts/bash/run_local_foss_api.sh [--load-db] [--ingest] [--recreate]"
   printf '%s\n' ""
   printf '%s\n' "Starts local Docker services if their containers exist, optionally loads processed"
-  printf '%s\n' "CSVs into SQL Server, optionally refreshes Qdrant, then runs the WARNY-BI"
+  printf '%s\n' "CSVs into SQL Server, optionally refreshes OpenSearch, then runs the WARNY-BI"
   printf '%s\n' "FastAPI service for Power BI."
 }
 
@@ -81,20 +81,21 @@ wait_http() {
 }
 
 start_container_if_exists "$SQL_CONTAINER"
-start_container_if_exists "$QDRANT_CONTAINER"
+start_container_if_exists "$OPENSEARCH_CONTAINER"
 
-wait_http "Qdrant" "$QDRANT_URL/collections" 30
+wait_http "OpenSearch" "$OPENSEARCH_URL/_cat/health" 30
 wait_http "Ollama" "$OLLAMA_URL/api/tags" 30
 
 if [[ "$LOAD_DB" -eq 1 ]]; then
   UV_CACHE_DIR="${UV_CACHE_DIR:-/tmp/uv-cache}" uv run python scripts/python/load_to_db.py
+  UV_CACHE_DIR="${UV_CACHE_DIR:-/tmp/uv-cache}" uv run python scripts/python/build_canonical_vocab.py
 fi
 
 if [[ "$INGEST" -eq 1 ]]; then
   if [[ "$RECREATE" -eq 1 ]]; then
-    UV_CACHE_DIR="${UV_CACHE_DIR:-/tmp/uv-cache}" uv run python scripts/python/load_to_qdrant.py --recreate
+    UV_CACHE_DIR="${UV_CACHE_DIR:-/tmp/uv-cache}" uv run python scripts/python/load_to_opensearch.py --recreate
   else
-    UV_CACHE_DIR="${UV_CACHE_DIR:-/tmp/uv-cache}" uv run python scripts/python/load_to_qdrant.py
+    UV_CACHE_DIR="${UV_CACHE_DIR:-/tmp/uv-cache}" uv run python scripts/python/load_to_opensearch.py
   fi
 fi
 

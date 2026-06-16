@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run the WARNY-BI FastAPI RAG service."""
 
-from warnybi.pipeline import ApiCli
+from warnybi.workflows.api import ApiCli
 
 
 if __name__ == "__main__":

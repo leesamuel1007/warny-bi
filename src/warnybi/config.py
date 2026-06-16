@@ -35,9 +35,11 @@ class SqlSettings:
 
 
 @dataclass(frozen=True)
-class QdrantSettings:
+class OpenSearchSettings:
     url: str
-    collection: str
+    index: str
+    username: str | None
+    password: str | None
 
 
 @dataclass(frozen=True)
@@ -74,7 +76,7 @@ class RuntimeSettings:
     retry_backoff_seconds: float
     log_pipeline: str
     sql: SqlSettings
-    qdrant: QdrantSettings
+    opensearch: OpenSearchSettings
     ollama: OllamaSettings
     api: ApiSettings
     answer: AnswerSettings
@@ -105,9 +107,11 @@ class EnvSettings:
                 password=self.optional("SQL_PASSWORD"),
                 connection_string=self.optional("SQL_CONNECTION_STRING"),
             ),
-            qdrant=QdrantSettings(
-                url=self.required("QDRANT_URL"),
-                collection=self.required("QDRANT_COLLECTION"),
+            opensearch=OpenSearchSettings(
+                url=self.required("OPENSEARCH_URL"),
+                index=self.required("OPENSEARCH_INDEX"),
+                username=self.optional("OPENSEARCH_USERNAME"),
+                password=self.optional("OPENSEARCH_PASSWORD"),
             ),
             ollama=OllamaSettings(
                 url=self.required("OLLAMA_URL"),

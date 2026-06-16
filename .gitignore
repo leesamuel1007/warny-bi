@@ -40,3 +40,5 @@ AGENTS.md
 
 # Keep raw datasets only when licensing and size policy allow it.
 # Use Git LFS for large images and PBIX files.
+
+config/canonical_vocab.json

@@ -3,7 +3,7 @@ WARNY-BI RAG retrieval view.
 
 Run this after 01_create_tables.sql and data load/import are complete.
 The resulting view is the shared retrieval surface for Azure AI Search,
-Qdrant ingestion, and Power BI evidence inspection.
+OpenSearch ingestion, and Power BI evidence inspection.
 */
 
 -- Remove the following two lines if running in Azure DB.

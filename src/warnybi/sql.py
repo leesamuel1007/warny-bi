@@ -13,7 +13,7 @@ from uuid import uuid4
 import pyodbc
 
 from warnybi.config import SqlSettings
-from warnybi.models import LoadResult, RagDocument, RagResponse
+from warnybi.models import EvidenceRow, LoadResult, RagDocument, RagResponse
 
 
 @dataclass(frozen=True)
@@ -86,12 +86,27 @@ class SqlClient:
 
     def read_documents(self, view_name: str) -> list[RagDocument]:
         query = f"""
-            SELECT document_id, source_type, source_id, warning_light_id,
-                   warning_light_name, make, model, model_year,
-                   component_category, severity, recommended_service_type,
-                   content, source_url, image_path, review_status
-            FROM {view_name}
-            ORDER BY document_id
+            SELECT docs.document_id,
+                   docs.source_type,
+                   docs.source_id,
+                   recall.campaign_id,
+                   docs.warning_light_id,
+                   docs.warning_light_name,
+                   docs.make,
+                   docs.model,
+                   docs.model_year,
+                   docs.component_category,
+                   docs.severity,
+                   docs.recommended_service_type,
+                   docs.content,
+                   docs.source_url,
+                   docs.image_path,
+                   docs.review_status
+            FROM {view_name} AS docs
+            LEFT JOIN dbo.recall_data AS recall
+                ON docs.document_id LIKE N'recall:%'
+               AND docs.source_id = recall.recall_record_id
+            ORDER BY docs.document_id
         """
         with self.connect() as connection:
             cursor = connection.cursor()
@@ -104,6 +119,7 @@ class SqlClient:
             document_id=row["document_id"],
             source_type=row["source_type"],
             source_id=row["source_id"],
+            campaign_id=row["campaign_id"],
             warning_light_id=row["warning_light_id"],
             warning_light_name=row["warning_light_name"],
             make=row["make"],
@@ -156,6 +172,6 @@ class SqlClient:
             connection.commit()
 
     def evidence_log_payload(self, evidence: Any) -> dict[str, Any]:
-        payload = evidence.to_dict()
+        payload = EvidenceRow(evidence).to_dict()
         payload["content"] = evidence.content
         return payload
