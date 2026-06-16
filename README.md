@@ -1,193 +1,161 @@
 # WARNY-BI
 
-WARNY-BI is a DS545 project that answers vehicle dashboard warning-light
-questions with retrieval-augmented generation and Power BI.
+WARNY-BI is a vehicle warning-light triage project built with Power BI and
+retrieval-augmented generation. The Power BI dashboard searches a small
+warning-light and recall knowledge base, asks an AI model to write a structured
+answer from the retrieved records, and displays the result.
 
-The system is not a certified diagnostic tool. It gives evidence-grounded
-triage: what a warning light may mean, how urgent it is, whether recall evidence
-looks relevant, what service route is recommended, and which records support the
-answer.
+The dashboard answers driver questions such as:
+
+```text
+2020 Hyundai Elantra yellow engine light recall
+```
+
+It returns warning-light severity, stop/service guidance, recommended service,
+recall status, possible causes, immediate action, parsed vehicle information,
+and supporting evidence.
+
+WARNY-BI is not a certified diagnostic tool. It is an evidence-grounded
+dashboard prototype for warning-light and recall triage.
+
+## Collaborators And Maintainers
+
+Project collaborators:
+
+- Sejun Ahn: GSDS
+- Fatima M. Ali: GSDS
+- Samuel S. Lee: GSC
+- Yongmin Kim: GSCEE
+
+Project maintainers:
+
+- Samuel S. Lee: leesamuel1007@kaist.ac.kr
+
+## Dashboard Pages
+
+The Power BI dashboard has three pages:
+
+1. Driver Triage: concise driver-facing answer, severity, recall status,
+   recommended service, causes, and immediate action.
+2. Recall And Evidence: retrieved recall, warning-light, service-map, and
+   validation evidence for checking whether the answer is supported.
+3. Interaction Logging: previous user prompts and usage summaries for business
+   and product analysis.
+
+Dashboard screenshots used in the report are stored under `docs/`, especially:
+
+```text
+docs/report_figures/
+```
+
+The dashboard files themselves are in `powerbi_dashboards/`.
 
 ## Repository Layout
 
 | Path | Purpose |
 | --- | --- |
-| `data/raw/` | Original source CSVs and image metadata inputs. |
-| `data/processed/` | SQL-ready CSVs used to build the database. |
+| `data/processed/` | SQL-ready CSV files used to populate the database. |
+| `data/raw/` | Original project data inputs. |
 | `data/images/` | Warning-light image assets. |
-| `scripts/sql/` | SQL Server table, retrieval-view, verification, and logging scripts. |
-| `scripts/python/` | Repeatable database loading, Qdrant ingestion, and FastAPI startup scripts. |
-| `scripts/bash/` | Local FOSS launcher. |
-| `scripts/powerbi/` | Power Query M files for Power BI Desktop. |
-| `src/warnybi/` | Local FOSS RAG backend using SQL Server, Qdrant, Ollama, and FastAPI. |
-| `config/prompts/` | Azure and FOSS RAG prompt templates. |
-| `docs/` | Human-readable architecture, data, and RAG contract notes. |
+| `scripts/sql/` | SQL scripts that create the database tables, search view, checks, and query log. |
+| `scripts/python/` | Python commands for loading data, building local search files, refreshing OpenSearch, and starting the local API. |
+| `scripts/bash/` | One-command local launcher. |
+| `scripts/powerbi/` | Shared Power Query M files used inside the dashboards. Avoid editing them unless the dashboard columns are intentionally changed. |
+| `src/warnybi/` | Local FOSS system code. |
+| `config/prompts/` | Azure and FOSS RAG prompts. |
+| `powerbi_dashboards/` | Power BI dashboard files. |
+| `docs/` | Setup guides and report figures. |
 
-## Current Pipelines
+## Azure Pipeline
 
-The Azure path used for the final dashboard was:
-
-```text
-processed CSVs -> Azure SQL -> dbo.vw_rag_documents -> Azure AI Search
--> Azure OpenAI GPT-4o -> Logic App -> Power BI
-```
-
-The local FOSS path mirrors that contract:
+The Azure version uses managed cloud services. Its flow is:
 
 ```text
-processed CSVs -> SQL Server -> dbo.vw_rag_documents -> Qdrant
--> Ollama -> FastAPI -> Power BI
+processed CSVs -> Azure SQL Database -> dbo.vw_rag_documents
+-> Azure AI Search -> Azure OpenAI GPT-4o
+-> Azure Logic App -> Power BI
 ```
 
-Both paths use the same Power BI-facing response shape and the same SQL log
-view:
+The Logic App is the middle step between Power BI and Azure OpenAI. It receives
+Power BI prompts, calls Azure OpenAI with Azure AI Search as the search source,
+writes interaction logs to Azure SQL, and returns the answer to Power BI.
+
+Use this guide:
 
 ```text
-dbo.query_log
-dbo.vw_query_log
+docs/azure_setup.md
 ```
 
-Azure log rows use `pipeline = azure_logic_app`. Local FOSS log rows use
-`pipeline = foss_fastapi`.
+The Logic App instructions are included in `docs/azure_setup.md`.
 
-The detailed Azure Logic App setup is recorded in
-`docs/logic_app_setup.md`.
+## FOSS Pipeline
 
-## Local FOSS Setup
-
-Create `config/.env` from `config/.env.example` and fill in the SQL password.
-The default local services are:
-
-- SQL Server: `127.0.0.1,1433`
-- Qdrant: `http://127.0.0.1:16333`
-- Ollama: `http://127.0.0.1:11434`
-- FastAPI: `http://127.0.0.1:18080`
-
-Run the SQL scripts in DBeaver against the target SQL database:
+The FOSS version is the local, no-cloud alternative. Its flow is:
 
 ```text
-scripts/sql/01_create_tables.sql
-scripts/sql/03_create_rag_view.sql
-scripts/sql/04_verify.sql
-scripts/sql/05_create_query_log.sql
+processed CSVs -> SQL Server -> dbo.vw_rag_documents
+-> OpenSearch BM25 + vector index -> Ollama
+-> FastAPI -> Power BI
 ```
 
-Load the processed CSVs with the ODBC loader:
+The FOSS version returns the same kind of answer and evidence tables as Azure.
+It uses OpenSearch for local search, Ollama for local AI models, FastAPI for
+the local web API, and the same SQL logging table/view used by the Azure
+dashboard.
 
-```bash
-UV_CACHE_DIR=/tmp/uv-cache uv run python scripts/python/load_to_db.py
-```
-
-This loader is the repeatable replacement for manual DBeaver CSV import. It can
-also target Azure SQL in principle if the Azure server, firewall, credentials,
-and ODBC driver are available, but the Azure SQL server used for the project has
-been purged and is not currently verified.
-
-Refresh Qdrant from the SQL retrieval view:
-
-```bash
-UV_CACHE_DIR=/tmp/uv-cache uv run python scripts/python/load_to_qdrant.py --recreate
-```
-
-Start the local API:
-
-```bash
-scripts/bash/run_local_foss_api.sh
-```
-
-Useful launcher options:
-
-```bash
-scripts/bash/run_local_foss_api.sh --load-db
-scripts/bash/run_local_foss_api.sh --ingest
-scripts/bash/run_local_foss_api.sh --recreate
-```
-
-Test the API:
-
-```bash
-curl -s -X POST http://127.0.0.1:18080/query \
-  -H "Content-Type: application/json" \
-  -d '{"query":"2020 Hyundai Elantra yellow engine light recall","top_k":5}' | jq
-```
-
-## FOSS Query Logging
-
-Local FOSS logging is mandatory after `05_create_query_log.sql` has been run.
-Every successful `/query` call inserts one row into `dbo.query_log` with
-`pipeline = foss_fastapi`, matching the Azure Logic App logging contract.
-
-If logging fails, the `/query` request fails after the configured retry attempts
-and the FastAPI terminal shows the SQL error. This usually means the SQL Server
-is unreachable, the configured SQL user does not have insert permission on
-`dbo.query_log`, `05_create_query_log.sql` was not run, or the database schema
-does not match the current scripts.
-
-Retry settings are configured in `config/.env`:
+Use this guide:
 
 ```text
-RETRY_ATTEMPTS=3
-RETRY_DELAY_SEC=0.5
+docs/foss_setup.md
 ```
 
-## Power BI Setup
+## Power BI Dashboards
 
-Create a local untracked file from the example:
+The repository currently keeps two dashboard files:
 
 ```text
-config/powerbi.secrets.example.json -> config/powerbi.secrets.json
+powerbi_dashboards/warny-bi-azure.pbix
+powerbi_dashboards/warny-bi-foss.pbix
 ```
 
-Open `config/powerbi.secrets.json`, set `ActiveBackend`, and fill in only the
-backend section you plan to use. The example file is the source of truth for the
-required JSON shape.
+The Power Query files under `scripts/powerbi/` are shared by both dashboards.
+Do not edit them unless the expected dashboard columns are intentionally
+changed.
 
-`ActiveBackend` selects the record returned by `LoadConfig`. Supported backend
-sections are:
+Both dashboards use:
 
-- `AzureLogicApp`: Power BI calls the Logic App URL. Azure OpenAI and Azure AI
-  Search keys stay inside Azure, not inside the PBIX.
-- `Foss`: Power BI calls the local FastAPI URL.
-- `AzureDirect`: stores the secrets needed for a direct Power BI to Azure
-  OpenAI call. This is not the current shared `Response` flow unless a direct
-  Azure Power Query implementation is used.
+- `LoadConfig`
+- `Query`
+- `Response`
+- `Answer`
+- `Evidence`
+- `Log`
 
-`SqlServer` and `SqlDatabase` point to the database that contains
-`dbo.vw_query_log`.
+Power BI reads local connection settings from this ignored file:
 
-In Power BI Desktop, create these queries from `scripts/powerbi/`:
+```text
+config/powerbi.secrets.json
+```
 
-| Power BI query | Source file | Enable load |
-| --- | --- | --- |
-| `LoadConfig` | `load_config.m` | No |
-| `Query` | `azure_query.m` or `foss_query.m` | No |
-| `Response` | `response_query.m` | No |
-| `Answer` | `answer_query.m` | Yes |
-| `Evidence` | `evidence_query.m` | Yes |
-| `Log` | `log_query.m` | Yes |
+Create it from:
 
-Use `azure_query.m` or `foss_query.m` as the implementation of the Power BI
-query named `Query`. Both use `RagApiUrl`, so `Response` and `Log` remain
-backend-agnostic. If `ActiveBackend` is `AzureDirect`, use or create a direct
-Azure query implementation that reads the Azure OpenAI and Azure AI Search
-fields returned by `LoadConfig`.
+```text
+config/powerbi.secrets.example.json
+```
 
-Required Power BI parameters:
+Set `ActiveBackend` to the dashboard you are using:
 
-| Parameter | Type | Purpose |
-| --- | --- | --- |
-| `PowerBIProjectRoot` | Text | Local repository path. |
-| `BasePrompt` | Text | Natural-language prompt sent to the backend. |
-| `BaseTopK` | Whole Number | Number of retrieved evidence rows. |
-| `BaseIncludeImageEvidence` | True/False | Whether image metadata can be retrieved. |
+- `AzureLogicApp` for `warny-bi-azure.pbix`
+- `Foss` for `warny-bi-foss.pbix`
 
-## Secrets
+In Power BI Desktop, set these parameters:
 
-Do not commit:
+| Parameter | Purpose |
+| --- | --- |
+| `PowerBIProjectRoot` | Local repository path. |
+| `BasePrompt` | User prompt sent to the backend. |
+| `BaseTopK` | Number of evidence rows to retrieve. |
+| `BaseIncludeImageEvidence` | Whether image metadata can be retrieved. |
 
-- `config/.env`
-- `config/powerbi.secrets.json`
-- Logic App URLs with `sig=`
-- Azure keys, SQL passwords, SAS tokens, or connection strings
-
-The checked-in example files show the required fields without real values.
+After changing the prompt or backend settings, refresh `Response`, `Answer`,
+`Evidence`, and `Log`.

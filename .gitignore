@@ -28,6 +28,7 @@ uv.lock
 docs/**
 !docs/
 !docs/*.md
+!docs/fig_*.png
 
 
 # VSCode Files
