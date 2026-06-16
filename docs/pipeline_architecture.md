@@ -1,142 +1,86 @@
-# WARNY-BI Pipeline Architecture
+# Pipeline Architecture
 
-## Overview
+WARNY-BI has two interchangeable RAG backends.
 
-WARNY-BI uses one dataset in two ways:
-
-- **Azure path**: the main course-submission pipeline.
-- **FOSS path**: the local development and fallback pipeline.
-
-Both paths start with the same CSV/image data and use the same SQL retrieval
-view shape. This keeps the local pipeline useful for testing before Azure
-deployment.
-
-The project flow is:
+## Azure Logic App Backend
 
 ```text
-raw CSV/images
--> Python validation and preprocessing
--> processed CSVs
--> SQL tables
--> SQL retrieval view
--> vector search / AI Search
--> LLM answer generation
--> Power BI evidence display
+processed CSVs
+-> Azure SQL Database
+-> dbo.vw_rag_documents
+-> Azure AI Search
+-> Azure OpenAI GPT-4o
+-> Azure Logic App
+-> Power BI
 ```
 
-Raw CSV files are the authoritative dataset. Python writes SQL-ready processed
-files under `data/processed/`; SQL scripts then create relational tables and
-the single RAG retrieval view.
+The Azure backend was used for the final submitted dashboard. The Logic App
+receives one natural-language prompt, calls Azure OpenAI with Azure AI Search as
+the retrieval source, writes one row to `dbo.query_log`, and returns the raw
+Azure OpenAI response to Power BI.
 
-## Azure Pipeline
+Power BI only needs the Logic App trigger URL for this backend. Azure OpenAI
+and Azure AI Search keys stay in Azure.
+
+## Azure Direct Backend
+
+The Power BI configuration also has an `AzureDirect` section for a direct Power
+BI to Azure OpenAI/Azure AI Search call. That path requires Azure OpenAI and
+Azure AI Search endpoint/key fields in the local Power BI secrets file and a
+direct Azure Power Query implementation. It is separate from the Logic App
+backend.
+
+## Local FOSS Backend
 
 ```text
-Local raw CSV/images
--> Python validation, EDA, and SQL-ready CSV preprocessing
--> processed CSVs and schema.json
--> Azure Storage
--> Azure SQL staging and relational tables
--> RAG-readable SQL view
--> Azure AI Search index
--> Microsoft Foundry OpenAI Entrypoint
--> Power Query M
--> Power BI dashboard
+processed CSVs
+-> local SQL Server
+-> dbo.vw_rag_documents
+-> Qdrant
+-> Ollama
+-> FastAPI
+-> Power BI
 ```
 
-Current Azure resources:
+The FOSS backend is the free local test path. It uses the same SQL retrieval
+view and the same Power BI response shape as Azure. When logging is enabled, it
+writes rows to the same `dbo.query_log` table with `pipeline = foss_fastapi`.
 
-- Resource group: `warny-bi-rag`
-- Primary region: Japan East
-- Active model host: Microsoft Foundry project/resource with OpenAI Entrypoint
-- Active model deployments: `gpt-4o`, `text-embedding-3-large`
-- Active data services: Azure Storage, Azure SQL Server/Database, Azure AI
-  Search
-- Removed resources: old East US 2 Foundry setup and old standalone Azure
-  OpenAI service
+## Shared SQL Contract
 
-Do not commit API keys, SQL passwords, endpoint keys, connection strings, or
-Power Query files with live secrets.
+Both backends depend on these SQL objects:
 
-## Local FOSS Pipeline
+- `dbo.vw_rag_documents`: retrieval records for vector search.
+- `dbo.query_log`: one row per RAG interaction.
+- `dbo.vw_query_log`: Power BI-ready log view for Page 3 analytics.
+
+Run SQL scripts against the intended active database in this order:
 
 ```text
-Local raw CSV/images
--> Python validation, EDA, and SQL-ready CSV preprocessing
--> processed CSVs and schema.json
--> local object/file storage
--> local SQL database and RAG-readable SQL view
--> local vector index
--> local LLM endpoint
--> Power Query M
--> Power BI dashboard
+01_create_tables.sql
+03_create_rag_view.sql
+04_verify.sql
+05_create_query_log.sql
 ```
 
-Current local setup:
-
-- SQL Server in Docker, kept local-only on `127.0.0.1:1433`.
-- DBeaver for SQL Server connection, table inspection, and manual CSV import.
-- `scripts/sql/01_create_tables.sql` to create the six processed-data tables.
-- `scripts/sql/03_create_rag_view.sql` to create `dbo.vw_rag_documents`.
-- `scripts/sql/04_verify.sql` to verify table loads and the RAG view.
-- Qdrant in Docker, kept local-only on custom host ports for vector storage.
-- Ollama on the Ubuntu host with `mxbai-embed-large` for embeddings and
-  `qwen2.5:14b` for local chat/RAG answer generation.
-- A root uv project with `pyproject.toml`, `uv.lock`, and exported
-  `requirements.txt` for Python loader, ingestion, and FastAPI code.
-
-CSV loading is currently done through DBeaver import into SQL Server. When this
-needs to be automated, the loading step should move into
-`scripts/sql/02_load_data.sql` or a Python loader.
-
-## Repository Layout
-
-```text
-data/
-  raw/                   # Source CSV files
-  processed/             # Generated SQL-ready CSVs and schema.json
-  images/                # Warning-light image files
-docs/                    # Project documentation
-scripts/
-  python/                # Runnable Python commands
-  sql/                   # SQL scripts for views, tables, and checks
-src/
-  warny_bi/              # Reusable Python package
-  rag_service/           # Local/FOSS RAG API service
-  powerbi/               # Power BI artifacts
-```
-
-The `warny_bi` package stores reusable class containers for CSV I/O, EDA,
-validation, and schema-driven preprocessing. Runnable commands live under
-`scripts/python/`.
-
-The preprocessing entrypoint is:
+Load processed CSVs with:
 
 ```bash
-python3 scripts/python/preprocess_dataset.py validate
-python3 scripts/python/preprocess_dataset.py eda
-python3 scripts/python/preprocess_dataset.py schema --csv-dir data/raw --output-file data/processed/schema.json
-python3 scripts/python/preprocess_dataset.py clean --schema-file data/processed/schema.json
+uv run python scripts/python/load_to_db.py
 ```
 
-`schema.json` is generated from the CSV files. It records column names, inferred
-types, suggested SQL types, key fields, and normalization rules.
+## Runtime Components
 
-## Files To Keep Versioned
+- `src/warnybi/`: local RAG service code.
+- `scripts/python/load_to_db.py`: processed CSV to SQL loader.
+- `scripts/python/load_to_qdrant.py`: SQL retrieval view to Qdrant ingestion.
+- `scripts/python/run_rag_api.py`: FastAPI service runner.
+- `scripts/bash/run_local_foss_api.sh`: local launcher.
+- `scripts/powerbi/`: Power Query files used in Power BI Desktop.
 
-Keep project logic in Git:
+## Power BI Backend Selection
 
-- SQL DDL, staging-load, merge, and view definitions
-- Azure AI Search index and field mapping notes
-- RAG system/user prompts
-- Power Query M scripts
-- EDA output, `schema.json`, and SQL schema review notes
-- Dashboard design notes and report evidence
-
-## Git And Data Policy
-
-- Track small CSV files only if their license permits redistribution.
-- Use Git LFS for images and `.pbix` files if they are committed.
-- Keep generated processed data out of Git unless needed for report evidence.
-- Keep `.env` files and credentials local.
-- Use placeholders in committed scripts for endpoints, keys, server names, and
-  database names.
+`config/powerbi.secrets.json` selects one backend with `ActiveBackend`.
+`LoadConfig` returns the selected backend record. The shared `Response` and
+`Log` queries stay backend-agnostic as long as the selected backend exposes
+`RagApiUrl`, `SqlServer`, and `SqlDatabase`.

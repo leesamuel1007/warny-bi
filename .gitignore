@@ -25,9 +25,13 @@ uv.lock
 *.pbix.tmp
 
 # Raw documents and processed files
-docs/*.docx
-docs/*.pdf
-docs/dashboard_*.png
+docs/**
+!docs/
+!docs/*.md
+
+
+# VSCode Files
+.vscode/
 
 # Agentic Files
 .codex/

@@ -1,76 +1,50 @@
-# RAG Retrieval View
+# RAG And Power BI Contract
 
-The RAG system retrieves evidence from a single SQL view:
+The retrieval source is:
 
 ```sql
 dbo.vw_rag_documents
 ```
 
-This view is built from the processed CSV-backed SQL tables. It gives Qdrant
-and Azure AI Search a single, consistent source to index.
+The interaction log source is:
 
-The view currently combines:
+```sql
+dbo.vw_query_log
+```
 
-- warning-light catalog rows
-- recall rows
-- maintenance/service route rows
-- warning-light image metadata rows
-- validation scenario rows
+## Retrieval View
 
-The current local view has 585 retrievable rows.
+`dbo.vw_rag_documents` combines warning-light, recall, service-route,
+image-metadata, and validation-scenario rows into one retrievable view.
 
-## View Columns
+Important fields:
 
 | Field | Purpose |
 | --- | --- |
-| `document_id` | Stable ID for the retrieval row, such as `warning_light:WL062` |
-| `source_type` | Original evidence type |
-| `source_id` | Source record ID, such as `WL062` or `RC0002` |
-| `warning_light_id` | Warning-light ID when the row is tied to a warning light |
-| `warning_light_name` | Human-readable warning-light name |
-| `make` | Vehicle make when the row is vehicle-specific |
-| `model` | Vehicle model when the row is vehicle-specific |
-| `model_year` | Vehicle model year when the row is vehicle-specific |
-| `component_category` | Vehicle component or service category |
-| `severity` | Warning or service urgency |
-| `recommended_service_type` | Suggested service route |
-| `content` | Text embedded for search and passed to the LLM as evidence |
-| `source_url` | Source URL or local source marker |
-| `image_path` | Image path when the row describes warning-light image metadata |
-| `review_status` | Review or confidence note |
+| `search_key` | Azure AI Search-safe key. |
+| `document_id` | Stable evidence ID such as `recall:RC0002`. |
+| `source_type` | Evidence source category. |
+| `warning_light_id` | Warning-light ID when available. |
+| `make`, `model`, `model_year` | Vehicle context when available. |
+| `severity` | Urgency signal from the source data. |
+| `recommended_service_type` | Controlled service route token. |
+| `content` | Text embedded and passed to the LLM as evidence. |
+| `source_url` | Source reference. |
+| `image_path` | Local or blob path for image metadata rows. |
 
-`content` is the most important field for retrieval. The remaining fields are
-metadata used for filtering, citations, Power BI rows, and answer formatting.
+The local verified retrieval view contains 585 rows.
 
-## How Retrieval Uses The View
+## API Response Shape
 
-For a text query such as:
-
-```text
-2020 Hyundai Elantra yellow engine light recall
-```
-
-the backend should:
-
-1. Embed the query with `mxbai-embed-large`.
-2. Search Qdrant over embeddings of `vw_rag_documents.content`.
-3. Retrieve matching warning-light, recall, and service-route rows.
-4. Send the retrieved evidence to `qwen2.5:14b`.
-5. Return a grounded answer and structured evidence rows.
-
-The view is not the final answer. It is the evidence layer that makes the final
-answer traceable.
-
-## Power BI Output
-
-Power BI receives one normalized response shape from either the FOSS FastAPI
-pipeline or the Azure OpenAI plus Azure AI Search pipeline:
+Azure and FOSS both normalize responses into this shape for Power BI:
 
 ```json
 {
-  "query": "natural-language user prompt",
+  "query": "natural-language prompt",
+  "top_k": 5,
+  "include_image_evidence": false,
   "answer": {
-    "summary": "plain-text answer summary",
+    "summary": "Plain-language summary",
     "severity_label": "Service soon",
     "severity_level": 2,
     "severity_color": "#F2C94C",
@@ -81,8 +55,8 @@ pipeline or the Azure OpenAI plus Azure AI Search pipeline:
     "recall_status_level": 3,
     "recall_status_color": "#7B1FA2",
     "recall_icon_key": "recall_candidate",
-    "possible_causes": ["Loose fuel cap", "Emissions-system fault"],
-    "immediate_action": "Arrange prompt diagnostic service.",
+    "possible_causes": ["Loose fuel cap"],
+    "immediate_action": "Schedule prompt diagnostic service.",
     "primary_campaign": "21V301000",
     "recall_interpretation": "VIN confirmation is required.",
     "evidence_used": ["recall:RC0002"],
@@ -99,72 +73,36 @@ pipeline or the Azure OpenAI plus Azure AI Search pipeline:
 }
 ```
 
-`answer.summary` is the only answer-summary text field. The other answer fields
-exist so cards, icons, colors, and parsed vehicle visuals can be built without
-manual text parsing in Power BI.
+Power BI uses:
 
-Power BI icon visuals should use the stable keys:
+- `Answer` for Page 1 triage cards and text.
+- `Evidence` for Page 2 recall/evidence inspection.
+- `Log` for Page 3 historical usage analytics.
 
-- `severity_icon_key`: `info`, `service_soon`, `warning`, or `stop`
-- `recall_icon_key`: `recall_unknown`, `recall_none`, `recall_review`, or
-  `recall_candidate`
+## Power BI Backend Config
 
-`answer_query.m` also exposes `severity_icon_label` and `recall_icon_label` for
-text labels or tooltips next to icon visuals.
+`scripts/powerbi/load_config.m` reads `config/powerbi.secrets.json`, selects
+the record named by `ActiveBackend`, and returns that selected backend record to
+the other Power Query files.
 
-Each evidence row should use stable display fields:
+`AzureLogicApp` and `Foss` both expose:
 
-- `Query_ID`
-- `document_id`
-- `source_id`
-- `source_type`
-- `source_type_label`
-- `rank`
-- `score`
-- `rank_score`
-- `confidence_label`
-- `evidence_level`
-- `evidence_level_label`
-- `warning_light_id`
-- `warning_light_name`
-- `make`
-- `model`
-- `model_year`
-- `campaign_id`
-- `recall_relevance`
-- `recall_relevance_label`
-- `component_category`
-- `severity_label`
-- `recommended_service_label`
-- `source_url`
-- `content_preview`
+- `RagApiUrl`
+- `SqlServer`
+- `SqlDatabase`
 
-The Power Query files under `src/powerbi/` are intentionally kept small:
+That is why `Response` and `Log` do not need backend-specific branches.
 
-- `foss_query.m`: calls the local/FOSS FastAPI endpoint and returns the normalized response record.
-- `azure_query.m`: calls Azure OpenAI plus Azure AI Search and returns the same normalized response record.
-- `answer_query.m`: turns the normalized response into one wide, one-row answer table for dashboard cards and text visuals.
-- `evidence_query.m`: turns the normalized response into one row-per-evidence table for detail tables and evidence charts.
-- `log_query.m`: reads `dbo.vw_query_log` into one Page 3 table.
-- `load_config.m`: reads the local, untracked Power BI configuration JSON.
-
-Power BI visuals should bind to columns from the wide answer table and the
-row-level evidence table instead of relying on many small query files.
+`AzureDirect` stores direct Azure OpenAI and Azure AI Search fields. It is for a
+direct Azure Power Query implementation, not the current Logic App-mediated
+`azure_query.m`.
 
 ## Prompt Files
 
-Prompt files are separated by backend because Azure and FOSS inject evidence in
-different ways.
+- `config/prompts/rag_answer_azure.txt`: Azure Logic App role information.
+- `config/prompts/rag_answer_foss.txt`: FOSS answer-generation prompt. The
+  local backend inserts the natural-language query and retrieved evidence into
+  this single prompt.
 
-- `config/prompts/rag_answer_azure.txt`: paste into a Logic App Compose action
-  named `RoleInformation`, then reference it from Azure OpenAI
-  `role_information`.
-- `config/prompts/rag_answer_foss.txt`: FOSS final answer prompt after Qdrant
-  retrieval. Contains `{query}` and `{evidence}` placeholders.
-- `config/prompts/query_intent_foss.txt`: FOSS pre-retrieval query-intent
-  extraction prompt.
-- `config/prompts/evidence_block_foss.txt`: FOSS local evidence-row formatting
-  template.
-
-`src/powerbi/azure_query.m` does not contain the system prompt; it calls the
-Logic App and normalizes the returned Azure OpenAI response.
+Azure receives retrieved evidence through Azure AI Search. FOSS retrieves
+evidence from Qdrant and inserts it into the local prompt.

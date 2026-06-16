@@ -1,45 +1,36 @@
-# WARNY-BI Data Inventory
+# Data Inventory
 
-WARNY-BI uses two kinds of data: CSV files with warning-light, recall, and
-service information, and image files for dashboard warning-light symbols.
+WARNY-BI uses CSV records and warning-light image assets.
 
-Raw CSV datasets live under `data/raw/`.
-Warning-light image files live under `data/images/`.
-These source assets are shared by both the Azure and FOSS paths.
+## Processed CSV Files
 
-Generated processed CSV files live under `data/processed/`. They are SQL-ready
-outputs created by `scripts/python/preprocess_dataset.py`, not raw source data.
+`data/processed/` is the current database-load source.
 
-## CSV Sources
+| File | SQL table | Role |
+| --- | --- | --- |
+| `dataset_sources.csv` | `dataset_sources` | Source and license metadata. |
+| `warning_light_catalog.csv` | `warning_light_catalog` | Main warning-light guidance. |
+| `maintenance_service_map.csv` | `maintenance_service_map` | Service route and urgency mapping. |
+| `recall_data.csv` | `recall_data` | Vehicle recall evidence. |
+| `scenario_validation.csv` | `scenario_validation` | Test cases and expected behavior. |
+| `warning_light_image_catalog.csv` | `warning_light_image_catalog` | Warning-light image metadata. |
 
-| Source file | Rows incl. header | Shared role | Suggested clean entity |
-| --- | ---: | --- | --- |
-| `data/raw/dataset_sources.csv` | 8 | Source, license, and collection metadata | `dataset_sources` |
-| `data/raw/warning_light_catalog.csv` | 65 | Main warning-light evidence records | `warning_light_catalog` |
-| `data/raw/warning_light_image_catalog.csv` | 303 | Image-to-warning-light mapping | `warning_light_images` |
-| `data/raw/recall_data.csv` | 166 | NHTSA recall evidence | `recalls` |
-| `data/raw/maintenance_service_map.csv` | 35 | Service-category and urgency mapping | `maintenance_services` |
-| `data/raw/scenario_validation.csv` | 21 | Expected behavior test cases | `validation_scenarios` |
+Load these files with:
 
-## Image Sources
+```bash
+uv run python scripts/python/load_to_db.py
+```
 
-- Root: `data/images/`
-- Current count: 302 files
-- Current class folders: 64
-- Current catalog path convention: CSV values use project-relative
-  `data/images/...` paths.
+## Raw Data And Images
 
-Images are shared source assets. Azure should normally store them in Blob
-Storage, while FOSS may read them from the local filesystem or object storage.
+`data/raw/` contains original source CSVs retained for traceability.
+`data/images/` contains warning-light image files grouped by warning-light
+class folders.
 
-For data efficiency, SQL tables and vector records store image metadata and
-paths. They do not store image binary content.
+The SQL tables store image paths and metadata, not image binaries.
 
-## How The Data Is Used
+## Retrieval Use
 
-Python reads the raw CSV files, performs lightweight validation and EDA,
-generates `schema.json` for review, and writes processed CSV files.
-
-Both Azure and FOSS pipelines use SQL scripts to build relational database
-tables from the processed CSV files. Those tables produce a single SQL view for
-RAG retrieval.
+After the six SQL tables are loaded, `scripts/sql/03_create_rag_view.sql`
+creates `dbo.vw_rag_documents`. This view contains the text and metadata that
+Azure AI Search or Qdrant indexes for RAG retrieval.

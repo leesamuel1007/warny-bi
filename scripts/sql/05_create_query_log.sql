@@ -24,6 +24,10 @@ The LLM response in answer_json is the source of the parsed dashboard fields.
 The citations_json payload is expanded by dbo.vw_query_log.
 */
 
+-- Remove the following two lines if running in Azure DB.
+USE warny_bi;
+GO
+
 SET NOCOUNT ON;
 GO
 

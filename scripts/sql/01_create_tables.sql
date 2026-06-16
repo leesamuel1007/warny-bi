@@ -1,11 +1,13 @@
 /*
 WARNY-BI table DDL.
 
-Run this script from a connection whose active database is warny_bi.
-It is intentionally schema-only so it can be reused for local SQL Server and
-Azure SQL. CSV loading belongs in 02_load_data.sql or the DBeaver import flow.
+Run this script from a connection whose active database is the target
+WARNY-BI database. It is intentionally schema-only so it can be reused for
+local SQL Server and Azure SQL. Load processed CSVs with
+scripts/python/load_to_db.py.
 */
 
+-- Remove the following two lines if running in Azure DB.
 USE warny_bi;
 GO
 

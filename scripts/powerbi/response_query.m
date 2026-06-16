@@ -2,7 +2,7 @@ let
     Config = LoadConfig(PowerBIProjectRoot),
     Source = Query(
         BasePrompt,
-        Config[AzureLogicAppUrl],
+        Config[RagApiUrl],
         BaseTopK,
         BaseIncludeImageEvidence
     )

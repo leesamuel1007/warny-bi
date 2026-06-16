@@ -46,15 +46,15 @@ let
 
     FossQuery = (
         query as text,
+        apiBaseUrl as text,
         optional topK as nullable number,
-        optional includeImageEvidence as nullable logical,
-        optional apiBaseUrl as nullable text
+        optional includeImageEvidence as nullable logical
     ) as record =>
         let
             Prompt = Text.Trim(query),
             RequestTopK = if topK = null then 5 else Int64.From(topK),
             RequestIncludeImageEvidence = if includeImageEvidence = null then false else includeImageEvidence,
-            BaseUrl = if apiBaseUrl = null then "http://localhost:18080" else apiBaseUrl,
+            BaseUrl = apiBaseUrl,
             Response =
                 if Prompt = "" then
                     [

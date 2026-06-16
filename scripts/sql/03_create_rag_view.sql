@@ -6,10 +6,9 @@ The resulting view is the shared retrieval surface for Azure AI Search,
 Qdrant ingestion, and Power BI evidence inspection.
 */
 
-/*
+-- Remove the following two lines if running in Azure DB.
 USE warny_bi;
 GO
-*/
 
 CREATE OR ALTER VIEW dbo.vw_rag_documents
 AS

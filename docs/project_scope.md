@@ -1,100 +1,44 @@
-# WARNY-BI Project Scope
+# Project Scope
 
-WARNY-BI is a DS545 term project for warning-light triage and business
-intelligence. The system should help a user describe a dashboard warning-light
-case, retrieve relevant warning-light, recall, and service-routing evidence,
-and return structured rows that can be shown in Power BI.
+WARNY-BI helps users interpret vehicle dashboard warning lights with retrieved
+warning-light, recall, service-route, image-metadata, and validation-scenario
+evidence.
 
-The system is not a certified diagnosis tool. Its job is to provide
-evidence-grounded triage: what the warning light usually means, how urgent it
-is, whether recall evidence may be relevant, and what service route should be
-prioritized.
+The system provides triage guidance only. It should not claim a confirmed
+diagnosis, and it should point users to VIN lookup, owner manuals, OEM guidance,
+or professional service inspection when needed.
 
-## Data Preparation
+## What The System Answers
 
-The source data consists of CSV files and warning-light images:
+- What the warning light likely means.
+- How urgent the warning is.
+- Whether recall evidence may be relevant.
+- What service route is recommended.
+- Which retrieved records support the answer.
+- What warning-light and recall topics users ask about over time.
 
-- warning-light catalog
-- warning-light image catalog
-- recall records
-- maintenance and service routing map
-- validation scenarios
-- source/license metadata
+## Data Scope
 
-The preprocessing script validates these files, profiles the CSVs, generates a
-reviewable `schema.json`, and writes SQL-ready CSV files under
-`data/processed/`.
+The database is built from six processed CSV files:
 
-```bash
-python3 scripts/python/preprocess_dataset.py validate
-python3 scripts/python/preprocess_dataset.py eda
-python3 scripts/python/preprocess_dataset.py schema --csv-dir data/raw --output-file data/processed/schema.json
-python3 scripts/python/preprocess_dataset.py clean --schema-file data/processed/schema.json
-```
+- `dataset_sources.csv`
+- `warning_light_catalog.csv`
+- `maintenance_service_map.csv`
+- `recall_data.csv`
+- `scenario_validation.csv`
+- `warning_light_image_catalog.csv`
 
-Raw CSV files remain the authoritative dataset. The generated schema helps with
-SQL table design and preprocessing rules.
+These files are loaded into SQL Server and combined through
+`dbo.vw_rag_documents` for retrieval.
 
-## SQL Database
+## Backend Scope
 
-Both the Azure and FOSS paths use SQL tables built from the processed CSV files.
-The current local setup uses SQL Server in Docker and DBeaver for manual CSV
-import.
+Azure is the submitted cloud pipeline. FOSS is the local mirror for no-cost
+testing. Both should return the same normalized Power BI response shape:
 
-Current SQL scripts:
+- one answer record for Page 1 cards and text
+- one evidence table for Page 2 verification
+- one log table for Page 3 usage analytics
 
-- `scripts/sql/01_create_tables.sql`: creates the six processed-data tables.
-- `scripts/sql/02_load_data.sql`: reserved for scripted loading.
-- `scripts/sql/03_create_rag_view.sql`: creates `dbo.vw_rag_documents`.
-- `scripts/sql/04_verify.sql`: checks row counts, joins, and the retrieval view.
-
-The retrieval view currently contains 585 rows from warning lights, recalls,
-maintenance routes, image metadata, and validation scenarios.
-
-## FOSS RAG Path
-
-The local FOSS pipeline is the development testbed:
-
-```text
-SQL Server view
--> Ollama embedding model
--> Qdrant vector index
--> Ollama chat model
--> FastAPI endpoint
--> Power BI / tester query flow
-```
-
-Current model choices:
-
-- Embeddings: `mxbai-embed-large`
-- Chat/RAG answers: `qwen2.5:14b`
-
-The next implementation step is to ingest `dbo.vw_rag_documents` into Qdrant.
-After that, the API can accept a user’s text description of warning lights,
-retrieve supporting rows, and return a grounded answer plus evidence rows.
-
-## Azure Path
-
-The Azure path should mirror the same data model where possible:
-
-```text
-processed CSVs
--> Azure Storage / Azure SQL
--> SQL retrieval view
--> Azure AI Search
--> Microsoft Foundry OpenAI models
--> Power Query
--> Power BI dashboard
-```
-
-The Azure model deployments are `text-embedding-3-large` and `gpt-4o`.
-
-## Power BI
-
-Power BI should show structured evidence rows instead of relying on an LLM to
-perform chart aggregation. Expected fields include vehicle information,
-warning-light name, severity, recall relevance, recommended service, evidence
-text, and retrieval score.
-
-Image upload is a later extension. The first customer-facing mode should accept
-text descriptions of dashboard warning lights.
+Image upload and image parsing are outside the current implementation. Existing
+image metadata can still be retrieved as supporting evidence.

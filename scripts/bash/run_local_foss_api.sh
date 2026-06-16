@@ -2,18 +2,20 @@
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-QDRANT_URL="${WARNY_QDRANT_URL:-http://127.0.0.1:16333}"
-OLLAMA_URL="${WARNY_OLLAMA_URL:-http://127.0.0.1:11434}"
-SQL_CONTAINER="${WARNY_SQL_CONTAINER:-mssql2025}"
-QDRANT_CONTAINER="${WARNY_QDRANT_CONTAINER:-warny-qdrant}"
+QDRANT_URL="${QDRANT_URL:-http://127.0.0.1:16333}"
+OLLAMA_URL="${OLLAMA_URL:-http://127.0.0.1:11434}"
+SQL_CONTAINER="${SQL_CONTAINER:-mssql2025}"
+QDRANT_CONTAINER="${QDRANT_CONTAINER:-warny-qdrant}"
 INGEST=0
 RECREATE=0
+LOAD_DB=0
 
 usage() {
-  printf '%s\n' "Usage: scripts/bash/run_local_foss_api.sh [--ingest] [--recreate]"
+  printf '%s\n' "Usage: scripts/bash/run_local_foss_api.sh [--load-db] [--ingest] [--recreate]"
   printf '%s\n' ""
-  printf '%s\n' "Starts local Docker services if their containers exist, optionally refreshes Qdrant,"
-  printf '%s\n' "then runs the WARNY-BI FastAPI service for Power BI."
+  printf '%s\n' "Starts local Docker services if their containers exist, optionally loads processed"
+  printf '%s\n' "CSVs into SQL Server, optionally refreshes Qdrant, then runs the WARNY-BI"
+  printf '%s\n' "FastAPI service for Power BI."
 }
 
 while [[ $# -gt 0 ]]; do
@@ -25,6 +27,10 @@ while [[ $# -gt 0 ]]; do
     --recreate)
       INGEST=1
       RECREATE=1
+      shift
+      ;;
+    --load-db)
+      LOAD_DB=1
       shift
       ;;
     -h|--help)
@@ -79,6 +85,10 @@ start_container_if_exists "$QDRANT_CONTAINER"
 
 wait_http "Qdrant" "$QDRANT_URL/collections" 30
 wait_http "Ollama" "$OLLAMA_URL/api/tags" 30
+
+if [[ "$LOAD_DB" -eq 1 ]]; then
+  UV_CACHE_DIR="${UV_CACHE_DIR:-/tmp/uv-cache}" uv run python scripts/python/load_to_db.py
+fi
 
 if [[ "$INGEST" -eq 1 ]]; then
   if [[ "$RECREATE" -eq 1 ]]; then

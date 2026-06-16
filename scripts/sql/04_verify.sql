@@ -1,9 +1,11 @@
 /*
 WARNY-BI SQL load verification.
 
-Run this after creating tables and importing data/processed/{name}.csv into warny_bi.
+Run this after creating tables and loading data/processed/{name}.csv into the
+active WARNY-BI database.
 */
 
+-- Remove the following two lines if running in Azure DB.
 USE warny_bi;
 GO
 
